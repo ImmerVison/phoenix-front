@@ -1,10 +1,13 @@
 import request from "~/api/requests.js";
 
-export function upload(formData, file, cookies, fileList, uploading, uploadingCount, waitingList, waitingCount) {
-  request({
-    url: `/upload?authCode=${cookies.get('authCode')}`,
+export function uploader(formData, file, cookies) {
+  return request({
+    url: `/api/upload`,
     method: 'post',
     data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100);
       file.onProgress({ percent: percentCompleted, file: file.file });

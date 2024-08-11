@@ -9,5 +9,6 @@ interface ImportMetaEnv {
     VITE_LC_SERVER_URL: string;
     VITE_IMG_FETCH_PREFIX: string;
     VITE_IMG_NAME_PREFIX: string;
+    VITE_API_BASE_URL: string;
 
 }
