@@ -394,9 +394,7 @@ const handleDownload = (file) => {
     </div>
   </div>
 
-  <el-button class="ml-3" type="success" @click="">
-    upload to server
-  </el-button>
+
 </template>
 
 
