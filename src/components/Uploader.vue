@@ -4,6 +4,9 @@
 import {uploader} from '~/api/app/uploader.js'
 import {FileListLike} from "~/types/FileLike.js";
 
+
+// region 变量
+
 const props = defineProps({
   bgColor: {
     type: String,
@@ -23,10 +26,12 @@ const props = defineProps({
 
 });
 
+// 动态计算背景颜色
 const combinedBgColor = computed(() => {
   const defaultClass = 'bg-slate-200'
   return props.bgColor === '' ? defaultClass : props.bgColor;
 });
+const errorMessage = ref('');
 
 
 const fileList = ref([]);
@@ -34,27 +39,9 @@ const fileList = ref([]);
 const uploading = ref(false);
 
 const maxUploading = ref(10);
+
 const waitingList = ref([]);
 
-
-const dialogImageUrl = ref('')
-const dialogVisible = ref(false)
-const disabled = ref(false)
-
-
-const handlePictureCardPreview = (file) => {
-  dialogImageUrl.value = file.url
-  dialogVisible.value = true
-}
-
-
-const uploadSuccessCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'done' || item.status === 'success').length;
-});
-
-const uploadErrorCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'exception').length;
-});
 
 const uploadingCount = computed(() => {
   return fileList.value.filter(item => item.status === 'uploading').length;
@@ -64,6 +51,18 @@ const waitingCount = computed(() => {
   return waitingList.value.length;
 });
 
+
+const uploadSuccessCount = computed(() => {
+  return fileList.value.filter(item => item.status === 'done' || item.status === 'success').length;
+});
+
+const uploadErrorCount = computed(() => {
+  return fileList.value.filter(item => item.status === 'exception').length;
+});
+// endregion
+
+
+// region 上传方法
 const uploadFile = (file) => {
   if (uploadingCount.value > maxUploading.value) {
     waitingList.value.push(file);
@@ -95,11 +94,45 @@ const uploadFile = (file) => {
   });
 };
 
-const handleRemove = (file) => {
-  fileList.value = fileList.value.filter(item => item.uid !== file.uid);
-  alert(file.name + '已删除');
+const beforeUpload = (file) => {
+  const isLt10M = Math.ceil(file.size / 1024 / 1024) < 10;
+  if (!isLt10M) {
+    alert('上传文件大小不能超过 10MB!');
+    return false;
+  } else {
+    uploading.value = true;
+    const fileUrl = URL.createObjectURL(file);
+    fileList.value.push({
+      uid: file.uid,
+      name: file.name,
+      url: fileUrl,
+      status: 'uploading',
+      progress: 0
+    });
+    return true;
+  }
 };
 
+//todo
+const submitUpload = () => {
+  fileList.value.forEach(file => {
+    if (file.status === 'done' || file.status === 'success') {
+      handleCopy(file);
+    }
+  });
+};
+// endregion
+
+
+
+// region 上传结果Hook
+
+const handleProgress = (event) => {
+  const target = fileList.value.find(item => item.uid === event.file.uid);
+  if (target) {
+    target.progreess = event.percent;
+  }
+};
 const handleSuccess = (response, file) => {
   try {
     const rootUrl = `${window.location.protocol}//${window.location.host}`;
@@ -141,78 +174,14 @@ const handleError = (err, file) => {
   }
 };
 
-const handleCopy = (file) => {
-  const status = fileList.value.find(item => item.uid === file.uid).status;
-  if (status !== 'done' && status !== 'success') {
-    alert('文件未上传成功，无法复制链接');
-    return;
-  }
-
-  let textToCopy;
-  if (props.selectedUrlForm === 'url') {
-    textToCopy = file.url;
-  } else if (props.selectedUrlForm === 'md') {
-    textToCopy = `![${file.name}](${file.url})`;
-  } else if (props.selectedUrlForm === 'html') {
-    textToCopy = `<img src="${file.url}" alt="${file.name}">`;
-  } else {
-    textToCopy = file.url;
-  }
-
-  navigator.clipboard.writeText(textToCopy);
-  alert('复制成功');
+const handleRemove = (file) => {
+  fileList.value = fileList.value.filter(item => item.uid !== file.uid);
+  alert(file.name + '已删除');
 };
+// endregion
 
-const beforeUpload = (file) => {
-  const isLt10M = Math.ceil(file.size / 1024 / 1024) < 10;
-  if (!isLt10M) {
-    alert('上传文件大小不能超过 10MB!');
-    return false;
-  } else {
-    uploading.value = true;
-    const fileUrl = URL.createObjectURL(file);
-    fileList.value.push({
-      uid: file.uid,
-      name: file.name,
-      url: fileUrl,
-      status: 'uploading',
-      progress: 0
-    });
-    return true;
-  }
-};
 
-const handleProgress = (event) => {
-  const target = fileList.value.find(item => item.uid === event.file.uid);
-  if (target) {
-    target.progreess = event.percent;
-  }
-};
-
-const copyAll = () => {
-  let urls;
-  if (props.selectedUrlForm === 'url') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => item.url).join('\n');
-  } else if (props.selectedUrlForm === 'md') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => `![${item.name}](${item.url})`).join('\n');
-  } else if (props.selectedUrlForm === 'html') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => `<img src="${item.url}" alt="${item.name}">`).join('\n');
-  } else {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => item.url).join('\n');
-  }
-  navigator.clipboard.writeText(urls);
-  alert('整体复制成功');
-};
-
-const clearFileList = () => {
-  fileList.value = [];
-  alert('列表已清空');
-};
-
+// region 功能性方法: 粘贴上传 & 复制链接 & 整体复制  & 清空列表
 const handlePaste = (event) => {
   if (props.uploadMethod !== 'paste') {
     return;
@@ -240,16 +209,59 @@ const handlePaste = (event) => {
   }
 };
 
+const handleCopy = (file) => {
+  const status = fileList.value.find(item => item.uid === file.uid).status;
+  if (status !== 'done' && status !== 'success') {
+    alert('文件未上传成功，无法复制链接');
+    return;
+  }
 
-const imgList = ref([])
-const emit = defineEmits(["change"])
+  let textToCopy;
+  if (props.selectedUrlForm === 'url') {
+    textToCopy = file.url;
+  } else if (props.selectedUrlForm === 'md') {
+    textToCopy = `![${file.name}](${file.url})`;
+  } else if (props.selectedUrlForm === 'html') {
+    textToCopy = `<img src="${file.url}" alt="${file.name}">`;
+  } else {
+    textToCopy = file.url;
+  }
+
+  navigator.clipboard.writeText(textToCopy);
+  alert('复制成功');
+};
+
+const copyAll = () => {
+  let urls;
+  if (props.selectedUrlForm === 'url') {
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
+        .map(item => item.url).join('\n');
+  } else if (props.selectedUrlForm === 'md') {
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
+        .map(item => `![${item.name}](${item.url})`).join('\n');
+  } else if (props.selectedUrlForm === 'html') {
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
+        .map(item => `<img src="${item.url}" alt="${item.name}">`).join('\n');
+  } else {
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
+        .map(item => item.url).join('\n');
+  }
+  navigator.clipboard.writeText(urls);
+  alert('整体复制成功');
+};
+
+const clearFileList = () => {
+  fileList.value = [];
+  alert('列表已清空');
+};
+// endregion
 
 
+
+// region 图片预览
+const imgPreviewList = ref([])
 let changeTimer = null; // 用于控制事件合并的计时器
-const maxConcurrent = 5; // 最大并发加载数量
-let currentIndex = 0; // 当前处理的文件索引
 let pendingFiles = []; // 用于存储待处理的文件列表
-
 
 const handleFileChange = (file, rawFileList) => {
   // 将文件暂存到 pendingFiles 中
@@ -280,30 +292,36 @@ const fileReader = (files, index) => {
   reader.readAsDataURL(files[index])
   reader.onload = (e) => {
 
-    imgList.value.push(Object.assign(e, {
+    imgPreviewList.value.push(Object.assign(e, {
       raw: files[index]
     }))
     if (++index < files.length) fileReader(files, index)
   }
 
-  // emit("change", {
-  //   imgs: imgList.value,
-  // })
-
-
 }
-
 
 const deleteImg = (index) => {
-  imgList.value.splice(index, 1)
-  emit("change", {
-    imgs: imgList.value,
-  })
+  imgPreviewList.value.splice(index, 1)
 }
 
 
-// 错误消息
-const errorMessage = ref('');
+
+const dialogImageUrl = ref('')
+const dialogImageName = ref('')
+const dialogVisible = ref(false)
+const disabled = ref(false)
+
+const PicPreviewByClick = (fileSrc, fileName) => {
+  dialogImageUrl.value = fileSrc
+  dialogImageName.value = fileName
+  dialogVisible.value = true
+}
+
+const handleDownload = (file) => {
+  //todo
+}
+
+// endregion
 
 
 </script>
@@ -315,10 +333,11 @@ const errorMessage = ref('');
 
     <div class="max-w-7xl max-md:max-w-lg mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
-        <template v-for="(item, index) in imgList" :key="index">
+        <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
           <div class="bg-white rounded-md overflow-hidden group">
             <div class="relative overflow-hidden group">
-              <img :src="item.target.result" alt=""
+              <img :src="imgPreview.target.result" alt=""
+                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
                    class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
               <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider  absolute top-0 right-0
                       cursor-pointer bg-[#645B5B]
@@ -360,6 +379,13 @@ const errorMessage = ref('');
 
 
           </el-upload>
+
+          <el-dialog v-model="dialogVisible">
+            <template #header="{ close, titleId, titleClass }">
+              <h4 :id="titleId" :class="titleClass" class="text-ellipsis">{{dialogImageName}}</h4>
+            </template>
+            <img w-full :src="dialogImageUrl" alt="Preview Image" />
+          </el-dialog>
         </div>
 
 
@@ -368,7 +394,9 @@ const errorMessage = ref('');
     </div>
   </div>
 
-
+  <el-button class="ml-3" type="success" @click="">
+    upload to server
+  </el-button>
 </template>
 
 
@@ -458,5 +486,8 @@ const errorMessage = ref('');
   font-size: medium;
   user-select: none;
 }
+
+
+
 
 </style>
