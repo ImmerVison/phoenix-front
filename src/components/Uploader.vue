@@ -1,9 +1,15 @@
 <script setup>
 // import cookies from 'vue-cookies'
-import { Delete, Download, Plus, ZoomIn } from '@element-plus/icons-vue'
+
 import {uploader} from '~/api/app/uploader.js'
+import {FileListLike} from "~/types/FileLike.js";
 
 const props = defineProps({
+  bgColor: {
+    type: String,
+    default: '',
+    required: false
+  },
   selectedUrlForm: {
     type: String,
     default: 'url',
@@ -14,7 +20,14 @@ const props = defineProps({
     default: 'drag',
     required: false
   }
+
 });
+
+const combinedBgColor = computed(() => {
+  const defaultClass = 'bg-slate-200'
+  return props.bgColor === '' ? defaultClass : props.bgColor;
+});
+
 
 const fileList = ref([]);
 
@@ -228,90 +241,168 @@ const handlePaste = (event) => {
 };
 
 
+const imgList = ref([])
+const emit = defineEmits(["change"])
+
+
+let changeTimer = null; // 用于控制事件合并的计时器
+const maxConcurrent = 5; // 最大并发加载数量
+let currentIndex = 0; // 当前处理的文件索引
+let pendingFiles = []; // 用于存储待处理的文件列表
+
+
+const handleFileChange = (file, rawFileList) => {
+  // 将文件暂存到 pendingFiles 中
+  pendingFiles.push(file);
+
+  // 如果有计时器在运行，清除它
+  if (changeTimer) {
+    clearTimeout(changeTimer);
+  }
+
+  // 设置一个新的计时器，200ms 后处理所有文件
+  changeTimer = setTimeout(() => {
+    processFiles(pendingFiles);
+    pendingFiles = []; // 清空待处理的文件列表
+  }, 100);
+};
+
+const processFiles = (files) => {
+  // 可以调用之前的 uploadImg 方法进行处理
+  const filesArray = files.map(f => f.raw || f);
+  const filesLikeList = new FileListLike(filesArray);
+  fileReader(filesLikeList, 0);
+};
+
+
+const fileReader = (files, index) => {
+  let reader = new FileReader()
+  reader.readAsDataURL(files[index])
+  reader.onload = (e) => {
+
+    imgList.value.push(Object.assign(e, {
+      raw: files[index]
+    }))
+    if (++index < files.length) fileReader(files, index)
+  }
+
+  // emit("change", {
+  //   imgs: imgList.value,
+  // })
+
+
+}
+
+
+const deleteImg = (index) => {
+  imgList.value.splice(index, 1)
+  emit("change", {
+    imgs: imgList.value,
+  })
+}
+
+
+// 错误消息
+const errorMessage = ref('');
+
+
+
 </script>
 
 <template>
-  <div class="upload-form" @paste.native="handlePaste">
-    <el-upload
-        class="upload-card"
-        :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
-        drag
-        multiple
-        :http-request="uploadFile"
-        :onSuccess="handleSuccess"
-        :on-error="handleError"
-        :before-upload="beforeUpload"
-        :on-progress="handleProgress"
-        :file-list="fileList"
-        :show-file-list="false"
-        accept="image/*, video/*"
-    >
-      <el-icon class="el-icon--upload">
-        <CameraFilled v-if="uploadMethod === 'drag'" color="blanchedalmond"/>
-        <CopyDocument v-else color="blanchedalmond"/>
-      </el-icon>
-      <div class="el-upload__text" v-if="uploadMethod === 'drag'">拖拽 或 <em>点击上传</em></div>
-      <div class="el-upload__text" v-else>复制 <em>粘贴</em> 上传</div>
-      <template #tip>
-        <div class="el-upload__tip">支持多文件上传，支持图片和视频，文件大小不超过5MB</div>
-      </template>
-    </el-upload>
-    <el-card class="upload-list-card" :class="{'upload-list-busy': fileList.length}">
-      <div class="upload-list-container" :class="{'upload-list-busy': fileList.length}">
-        <el-scrollbar>
-          <div class="upload-list-dashboard">
-            <el-text class="upload-list-dashboard-title">
-              <el-icon><List /></el-icon>{{ uploadingCount + waitingCount }}
-              <el-icon><Checked /></el-icon>{{ uploadSuccessCount }}
-              <el-icon><Failed /></el-icon>{{ uploadErrorCount }}
-            </el-text>
-            <div class="upload-list-dashboard-action">
-              <el-button-group>
-                <el-tooltip content="整体复制" placement="top">
-                  <el-button type="primary" round @click="copyAll" alt="整体复制"><el-icon><Grid /></el-icon></el-button>
-                </el-tooltip>
-                <el-tooltip content="清空列表" placement="top">
-                  <el-button type="primary" round @click="clearFileList"><el-icon><CircleClose /></el-icon></el-button>
-                </el-tooltip>
-              </el-button-group>
-            </div>
-          </div>
-          <div class="upload-list-item" v-for="file in fileList" :key="file.name" :span="8">
-            <img
-                style="width: 10vw; border-radius: 12px;"
-                :src="file.url"
-                @error="file.url = 'https://imgbed.sanyue.site/file/b6a4a65b4edba4377492e.png'"
-            >
-            </img>
-            <div class="upload-list-item-content">
-              <el-text class="upload-list-item-name" truncated>{{ file.name }}</el-text>
-              <div class="upload-list-item-url" v-if="file.status==='done'">
-                <el-link :underline="false" :href="file.url" target="_blank">
-                  <el-text class="upload-list-item-url-text" truncated>{{ file.url }}</el-text>
-                </el-link>
-              </div>
-              <div class="upload-list-item-progress" v-else>
-                <el-progress :percentage="file.progreess" :status="file.status" :show-text="false"/>
-              </div>
-            </div>
-            <div class="upload-list-item-action">
-              <el-button type="primary" circle class="upload-list-item-action-button" @click="handleCopy(file)">
-                <el-icon><Link /></el-icon>
-              </el-button>
-              <el-button type="danger" circle class="upload-list-item-action-button" @click="handleRemove(file)">
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </div>
-          </div>
-        </el-scrollbar>
-      </div>
-    </el-card>
+  <div class="px-4 py-6"
+       :class="combinedBgColor">
 
-  </div>
+
+
+
+    <div class="max-w-7xl max-md:max-w-lg mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
+        <template v-for="(item, index) in imgList" :key="index">
+          <div class="bg-white rounded-md overflow-hidden group">
+            <div class="relative overflow-hidden group">
+              <img :src="item.target.result" alt=""
+                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
+              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider  absolute top-0 right-0
+                      cursor-pointer bg-[#645B5B]
+                      hover:text-md hover:bg-opacity-60
+                      opacity-0 group-hover:opacity-100
+                      transition-opacity duration-300
+                      focus-within:opacity-100"
+                   @click="deleteImg(index)">
+                <div class="i-material-symbols-delete-sweep-outline-rounded "/>
+              </div>
+            </div>
+          </div>
+
+        </template>
+
+
+        <div class="upload-form" @paste.native="handlePaste">
+          <el-upload
+              class="upload-card"
+              :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
+              drag
+              multiple
+              :http-request="uploadFile"
+              :onSuccess="handleSuccess"
+              :on-error="handleError"
+              :before-upload="beforeUpload"
+              :on-progress="handleProgress"
+              :file-list="fileList"
+              :show-file-list="false"
+              accept="image/*, video/*"
+              @change="handleFileChange"
+              :auto-upload="false"
+          >
+          </el-upload>
+        </div>
+
+      </div>
+
+<!--        <div>-->
+<!--          <label for="uploadFile1"-->
+<!--                 class="bg-white text-black text-base rounded w-full h-60 flex flex-col items-center justify-center cursor-pointer border-2 border-gray-300 border-dashed mx-auto font-[sans-serif]">-->
+<!--            <i class="i-ph-upload-light"></i>-->
+<!--            上传PNG图片-->
+            <input type="file" accept="image/png" multiple id='uploadFile1' @change="uploadImg" class="hidden"/>
+<!--            <p class="text-xs text-gray-400 mt-2">PNG, JPG SVG, WEBP, and GIF are Allowed.</p>-->
+<!--          </label>-->
+<!--        </div>-->
+
+      </div>
+    </div>
+
+
+
+
 </template>
 
 
 <style scoped>
+.i-ph-upload-light {
+  --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 256 256' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M238 136v64a14 14 0 0 1-14 14H32a14 14 0 0 1-14-14v-64a14 14 0 0 1 14-14h48a6 6 0 0 1 0 12H32a2 2 0 0 0-2 2v64a2 2 0 0 0 2 2h192a2 2 0 0 0 2-2v-64a2 2 0 0 0-2-2h-48a6 6 0 0 1 0-12h48a14 14 0 0 1 14 14M84.24 76.24L122 38.49V128a6 6 0 0 0 12 0V38.49l37.76 37.75a6 6 0 0 0 8.48-8.48l-48-48a6 6 0 0 0-8.48 0l-48 48a6 6 0 0 0 8.48 8.48M198 168a10 10 0 1 0-10 10a10 10 0 0 0 10-10'/%3E%3C/svg%3E");
+  -webkit-mask: var(--un-icon) no-repeat;
+  mask: var(--un-icon) no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  background-color: currentColor;
+  color: inherit;
+  width: 1.6em;
+  height: 1.6em;
+}
 
+.i-material-symbols-delete-sweep-outline-rounded {
+  --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 24 24' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M5 19q-.825 0-1.412-.587T3 17V8q-.425 0-.712-.288T2 7t.288-.712T3 6h3v-.5q0-.425.288-.712T7 4.5h2q.425 0 .713.288T10 5.5V6h3q.425 0 .713.288T14 7t-.288.713T13 8v9q0 .825-.587 1.413T11 19zm11-1q-.425 0-.712-.288T15 17t.288-.712T16 16h2q.425 0 .713.288T19 17t-.288.713T18 18zm0-4q-.425 0-.712-.288T15 13t.288-.712T16 12h4q.425 0 .713.288T21 13t-.288.713T20 14zm0-4q-.425 0-.712-.288T15 9t.288-.712T16 8h5q.425 0 .713.288T22 9t-.288.713T21 10zM5 8v9h6V8z'/%3E%3C/svg%3E");
+  -webkit-mask: var(--un-icon) no-repeat;
+  mask: var(--un-icon) no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  background-color: currentColor;
+  color: inherit;
+  width: 1.2em;
+  height: 1.2em;
+  --at-apply: 'font-bold opacity-100 focus-within:opacity-100';
+}
 
 </style>

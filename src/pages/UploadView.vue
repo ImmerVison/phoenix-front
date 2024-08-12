@@ -10,11 +10,12 @@
       </h1>
       <div class="card rd-md mt-4 flex-col justify-center">
 
+        <div class="flex-col justify-center items-center p-8">
 
-          <Uploader
-              :selected-url-form="selectedUrlForm"
-              :upload-method="uploadMethod"
-          />
+            <Uploader/>
+
+
+        </div>
 
         <div class="text-center ">
           <h2 class="text-2xl font-700">Start From UnoCss</h2>
@@ -71,37 +72,6 @@ const uploadMethod =  ref('drag');
 const showUrlDialog = ref(false);
 
 
-// import UploadForm from '@/components/UploadForm.vue'
-// import Footer from '@/components/Footer.vue'
-// import {ref} from 'vue'
-// import Uploader from "~/components/Uploader.vue";
-//
-// export default {
-//   name: 'UploadHome',
-//   data() {
-//     return {
-//       selectedUrlForm: ref('url'),
-//       uploadMethod: ref('drag'),
-//       showUrlDialog: false
-//     }
-//   },
-//   components: {
-//     Uploader,
-//     UploadForm,
-//     Footer
-//   },
-//   methods: {
-//     handleManage() {
-//       window.location.href = '/admin'
-//     },
-//     openUrlDialog() {
-//       this.showUrlDialog = true
-//     },
-//     changeUploadMethod() {
-//       this.uploadMethod = this.uploadMethod === 'drag' ? 'paste' : 'drag'
-//     }
-//   }
-// }
 </script>
 
 <style scoped>
