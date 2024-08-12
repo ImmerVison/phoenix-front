@@ -306,14 +306,11 @@ const deleteImg = (index) => {
 const errorMessage = ref('');
 
 
-
 </script>
 
 <template>
   <div class="px-4 py-6"
        :class="combinedBgColor">
-
-
 
 
     <div class="max-w-7xl max-md:max-w-lg mx-auto">
@@ -338,9 +335,8 @@ const errorMessage = ref('');
         </template>
 
 
-        <div class="upload-form" @paste.native="handlePaste">
+        <div  @paste.native="handlePaste">
           <el-upload
-              class="upload-card"
               :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
               drag
               multiple
@@ -355,25 +351,22 @@ const errorMessage = ref('');
               @change="handleFileChange"
               :auto-upload="false"
           >
+            <el-icon class="el-icon--upload">
+              <div class="i-ph-upload-light"></div>
+            </el-icon>
+            <div class="el-upload__text">
+              <p class="text-xs text-gray-400 mt-2">PNG, JPG SVG, WEBP, and GIF are Allowed.</p>
+            </div>
+
+
           </el-upload>
         </div>
 
-      </div>
-
-<!--        <div>-->
-<!--          <label for="uploadFile1"-->
-<!--                 class="bg-white text-black text-base rounded w-full h-60 flex flex-col items-center justify-center cursor-pointer border-2 border-gray-300 border-dashed mx-auto font-[sans-serif]">-->
-<!--            <i class="i-ph-upload-light"></i>-->
-<!--            上传PNG图片-->
-            <input type="file" accept="image/png" multiple id='uploadFile1' @change="uploadImg" class="hidden"/>
-<!--            <p class="text-xs text-gray-400 mt-2">PNG, JPG SVG, WEBP, and GIF are Allowed.</p>-->
-<!--          </label>-->
-<!--        </div>-->
 
       </div>
+
     </div>
-
-
+  </div>
 
 
 </template>
@@ -390,6 +383,9 @@ const errorMessage = ref('');
   color: inherit;
   width: 1.6em;
   height: 1.6em;
+  border: none;
+
+
 }
 
 .i-material-symbols-delete-sweep-outline-rounded {
@@ -403,6 +399,64 @@ const errorMessage = ref('');
   width: 1.2em;
   height: 1.2em;
   --at-apply: 'font-bold opacity-100 focus-within:opacity-100';
+}
+
+
+@keyframes breathe {
+  0%, 100% {
+  }
+  50% {
+    box-shadow: 0 0 10px 5px #409EFF;
+    opacity: 0.8;
+  }
+}
+
+
+.paste-mode :deep(.el-upload) {
+  pointer-events: none;
+}
+
+
+
+.is-uploading :deep(.el-upload-dragger){
+  animation: breathe 3s infinite;
+}
+
+.upload-card-busy :deep(.el-upload-dragger) {
+  height: 25vh;
+}
+.paste-mode :deep(.el-upload) {
+  pointer-events: none;
+}
+
+:deep(.el-upload-dragger)  {
+  --at-apply: h-60;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  border: 2px dashed #409EFF;
+  opacity: 0.7;
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+:deep(.el-upload-dragger:hover) {
+  opacity: 0.8;
+  box-shadow: 0 0 10px 5px #409EFF;
+}
+:deep(.el-upload-dragger.is-dragover) {
+  opacity: 0.8;
+  box-shadow: 0 0 10px 5px #409EFF;
+}
+.is-uploading :deep(.el-upload-dragger){
+  animation: breathe 3s infinite;
+}
+.el-upload__text {
+  font-weight: bold;
+  font-size: medium;
+  user-select: none;
 }
 
 </style>
