@@ -14,18 +14,18 @@ import { uploader } from '~/api/app/uploader.js';
 
 // region 图片预览
 
-/**
- * @typedef {Object} RawData
- * @property {number} uid - A unique identifier for the data.
- */
 
 /**
  * @typedef {Object} DataItem
- * @property {RawData} raw - Contains the raw data.
+ * @property {File} raw - Contains the raw data.
  * @property {string} status - The status of the data.
  */
-/** @type {import('vue').Reactive<DataItem[]>} */
-const imgPreviewList = reactive([]);
+/** @type {import('vue').Ref<DataItem[]>} */
+//const imgPreviewList = reactive([]);
+const imgPreviewList = ref([])
+
+
+
 
 /** @type {number | null} */
 let changeTimer = null;
@@ -68,11 +68,20 @@ const fileReader = (files, index) => {
   let reader = new FileReader();
   reader.readAsDataURL(files[index]);
   reader.onload = (e) => {
-    imgPreviewList.push(Object.assign(e, {
+    imgPreviewList.value.push(Object.assign(e, {
       raw: files[index],
       status: 'loading',
     }));
     if (++index < files.length) fileReader(files, index);
+
+    // //设一个定时器, 5s后改变imgPreviewList中的status
+    // setTimeout(() => {
+    //   imgPreviewList.value.forEach((imgPreview) => {
+    //     if (imgPreview.status === 'loading') {
+    //       imgPreview.status = 'done';
+    //     }
+    //   });
+    // }, 1000);
   };
 };
 
@@ -81,7 +90,7 @@ const fileReader = (files, index) => {
  * @param {number} index - 要删除的图片索引
  */
 const deleteImg = (index) => {
-  imgPreviewList.splice(index, 1);
+  imgPreviewList.value.splice(index, 1);
 };
 
 /** @type {import('vue').Ref<string>} */
@@ -178,22 +187,27 @@ const errorMessage = ref('');
 
 /** @type {ComputedRef<[]|{uid: ComputedRef<number>, onProgress: function(Object): void, file: ComputedRef<UnwrapRef<{uid: number}>>, onError: function(Error, UploadingFile): void, name: ComputedRef<*>, progress: number, url: ComputedRef<*>, status: string, onSuccess: function(Object, UploadingFile): void}[]>}
  *  */
-// 事实上我只会上传imgPreviewList中的图片, 因此这里的fileList应该又imgPreviewList computed,
-// 但是fileList的类型是CombinedFile[], 而imgPreviewList的类型是DataItem[], 因此这里的fileList应该是一个computed
-// 创建响应式对象数组 fieList
+// 事实上我只会上传imgPreviewList中的图片, 因此这里的fileList应该由imgPreviewList computed而来
+
 const fileList = computed(() => {
 
-  if (imgPreviewList.length === 0) {
+  if (imgPreviewList.value.length === 0) {
     return [];
   }
-  // 否则，对 a 中的每个对象进行加工处理并生成 b 的对应对象
-  return imgPreviewList.map(imgPreview => ({
+  return imgPreviewList.value.map(imgPreview => ({
         uid: computed(() => imgPreview.raw.uid), // imgPreview.raw.uid的变化会导致uid的变化
         name: computed(() => imgPreview.raw.name),
         url: computed(() => imgPreview.target.result),
-        status: 'uploading', //自定义属性, 独立于imgPreviewList的status
-        progress: 0,
-        file: computed(() => imgPreview.raw),
+        status: ref('uploading'), //自定义属性, 独立于imgPreviewList的status
+        progress: ref(0),
+        file: computed(() => {
+          if (imgPreview.raw instanceof File) {
+            console.log("这是一个文件对象");
+          } else {
+            console.log("这不是一个文件对象");
+          }
+          return imgPreview.raw
+        }),
         //需要手动挂载回调函数
         onSuccess: handleSuccess,
         onProgress: handleProgress,
@@ -201,8 +215,12 @@ const fileList = computed(() => {
   }));
 });
 
+
+
+
 /** @type {import('vue').Ref<boolean>} */
 const uploading = ref(false);
+
 
 
 /** @type {import('vue').Ref<number>} */
@@ -216,7 +234,7 @@ const waitingList = ref([]);
  * @returns {number}
  */
 const uploadingCount = computed(() => {
-  return fileList.filter(item => item.status === 'uploading').length;
+  return fileList.value.filter(item => item.status === 'uploading').length;
 });
 
 /**
@@ -232,7 +250,7 @@ const waitingCount = computed(() => {
  * @returns {number}
  */
 const uploadSuccessCount = computed(() => {
-  return fileList.filter(item => item.status === 'done' || item.status === 'success').length;
+  return fileList.value.filter(item => item.status === 'done' || item.status === 'success').length;
 });
 
 /**
@@ -240,11 +258,45 @@ const uploadSuccessCount = computed(() => {
  * @returns {number}
  */
 const uploadErrorCount = computed(() => {
-  return fileList.filter(item => item.status === 'exception').length;
+  return fileList.value.filter(item => item.status === 'exception').length;
 });
 // endregion
 
 // region 上传方法
+
+
+function safeStringify(obj) {
+  const cache = [];
+  const jsonString = JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (cache.includes(value)) {
+        return; // 避免循环引用
+      }
+      cache.push(value);
+    }
+    return value;
+  });
+  return jsonString;
+}
+
+
+function base64ToFile(base64, fileName) {
+  // 将 Base64 字符串分割成 MIME 类型和数据部分
+  let arr = base64.split(',');
+  let mime = arr[0].match(/:(.*?);/)[1];
+  let bstr = atob(arr[1]);
+  let n = bstr.length;
+  let u8arr = new Uint8Array(n);
+
+  // 将 Base64 数据转换为字节数组
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  // 创建 File 对象
+  return new File([u8arr], fileName, { type: mime });
+}
+
 
 /**
  * 上传文件方法
@@ -252,15 +304,31 @@ const uploadErrorCount = computed(() => {
  * @param {CombinedFile} file - 上传的文件对象
  */
 const uploadFile = (file) => {
-  const originalFile = file.file
+  // console.log(`uploadFile: ${safeStringify(file)}`);
+  const uid = file.uid;
+  // const originalFile = base64ToFile(file.url, file.name);
+  const originalFile = unref(file.file); // Ensure that you unref the computed value
+
+  console.log(`originalFile: ${originalFile}`);
+  if(originalFile instanceof File) {
+    console.log("originalFile是一个文件对象");
+  } else {
+    console.log("originalFile不是一个文件对象");
+  }
 
 
   if (uploadingCount.value > maxUploading.value) {
     waitingList.value.push(file);
-    fileList.find(item => item.uid === originalFile.uid).status = 'waiting';
+    fileList.value.find(item => item.uid === uid).status = 'waiting';
     return;
   } else {
-    fileList.find(item => item.uid === originalFile.uid).status = 'uploading';
+    // 这里发现fileList.value为空数组, 但是实际上fileList是一个computed, 只要imgPreviewList变化, fileList也会变化
+    // 为什么会出现这种情况呢?
+    // await new Promise(resolve => setTimeout(resolve, 2000));
+    // console.log(`fileList: ${safeStringify(fileList.value)}`);
+
+    const toBeUploadFile = fileList.value.find(item => item.uid === uid);
+    toBeUploadFile.status = 'uploading';
   }
 
   const formData = new FormData();
@@ -273,8 +341,7 @@ const uploadFile = (file) => {
       .catch(err => {
         if (err.response && err.response.status === 401) {
           waitingList.value = [];
-          imgPreviewList.slice(0, imgPreviewList.length)
-
+          imgPreviewList.value.slice(0, imgPreviewList.value.length)
           //todo 待优化, 重新认证后仍保留之前的图片预览列表
           //fileList.value = [];
           alert('认证状态错误！');
@@ -301,35 +368,57 @@ const beforeUpload = (file) => {
   if (!isLt10M) {
     alert('上传文件大小不能超过 10MB!');
     //文件太大，不允许上传, 但是这里的fileList是一个computed, 无法直接修改, 所以只是设置了status, 但是并没有真正的删除
-    fileList.find(item => item.uid === file.uid).status = 'exception';
+    fileList.value.find(item => item.uid === file.uid).status = 'exception';
     return false;
   }
 };
 
+
+
+
 /**
  * 提交上传的方法
  */
+
+
+const uploadRef = ref()
+
 const submitUpload = () => {
-  fileList.forEach(/**@type{CombinedFile}  **/file => {
-    if (file.status === 'done' || file.status === 'success') {
-      handleCopy(file);
-    }
-  });
-};
+  console.log('开始上传: ' +  fileList.value);
+
+  uploadFile(fileList.value[0])
+}
+
+
+// const submitUpload = () => {
+//   fileList.value.forEach(/**@type{CombinedFile}  **/file => {
+//     if (file.status === 'done' || file.status === 'success') {
+//       handleCopy(file);
+//     }
+//   });
+// };
 // endregion
 
 // region 上传结果Hook
 
-// const checkProgress = (imgPreviewItem) => {
-//   //根据imgPreviewItem的uid找到对应的fileList中的文件
-//     const /**@type{CombinedFile} **/combinedFile =  fileList.find(item => item.uid === imgPreviewItem.raw.uid)
-//     if (combinedFile.status === 'success') {
-//       imgPreviewItem.status = 'success'
-//     } else if (combinedFile.status === 'exception') {
-//       imgPreviewItem.status = 'exception'
-//     }
-// }
-
+/**
+ * 检查上传进度
+ * @param {DataItem} imgPreview - 图片预览对象
+ * @returns {string} - 上传状态
+ */
+// const checkProgress = (imgPreview) => {
+//   // Watch the specific combinedFile's status that matches imgPreview.raw.uid
+//   watch(
+//       () => fileList.value.find(item => item.uid === imgPreview.raw.uid)?.status,
+//       (newStatus) => {
+//         console.log(`newStatus: ${JSON.stringify(newStatus, null, 2)}`);
+//         if (newStatus) {
+//           imgPreview.status = newStatus;
+//         }
+//       },
+//       { immediate: true, deep: true} // Ensures the watch runs immediately for the initial synchronization
+//   );
+// };
 
 /**
  * 处理上传进度
@@ -339,7 +428,7 @@ const handleProgress = (event) => {
   /**
    * @type {UploadingFile | undefined}
    */
-  const target = fileList.find(item => item.uid === event.file.uid);
+  const target = fileList.value.find(item => item.uid === event.file.uid);
   if (target) {
     target.progress = event.percent;
   }
@@ -353,7 +442,7 @@ const handleProgress = (event) => {
 const handleSuccess = (response, file) => {
   try {
     const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const/**@type{CombinedFile} **/ target = fileList.find(item => item.uid === file.uid);
+    const/**@type{CombinedFile} **/ target = fileList.value.find(item => item.uid === file.uid);
     console.log(`response: ${JSON.stringify(response, null, 2)}`);
     target.url = rootUrl + response.data[0].src;
     target.progress = 100;
@@ -363,7 +452,7 @@ const handleSuccess = (response, file) => {
     }, 3000);
   } catch (error) {
     alert(file.name + '上传失败');
-    fileList.find(item => item.uid === file.uid).status = 'exception';
+    fileList.value.find(item => item.uid === file.uid).status = 'exception';
   } finally {
     if (uploadingCount.value + waitingCount.value === 0) {
       uploading.value = false;
@@ -382,7 +471,7 @@ const handleSuccess = (response, file) => {
  */
 const handleError = (err, file) => {
   alert(file.name + '上传失败');
-  fileList.find(item => item.uid === file.uid).status = 'exception';
+  fileList.value.find(item => item.uid === file.uid).status = 'exception';
 
   if (waitingList.value.length) {
     const nextFile = waitingList.value.shift();
@@ -399,7 +488,7 @@ const handleError = (err, file) => {
  * @param {File} file - 被移除的文件对象
  */
 const handleRemove = (file) => {
-  fileList = fileList.filter(item => item.uid !== file.uid);
+  fileList = fileList.value.filter(item => item.uid !== file.uid);
   alert(file.name + '已删除');
 };
 // endregion
@@ -447,7 +536,7 @@ const handleRemove = (file) => {
  * @param {File} file - 文件对象
  */
 const handleCopy = (file) => {
-  const status = fileList.find(item => item.uid === file.uid).status;
+  const status = fileList.value.find(item => item.uid === file.uid).status;
   if (status !== 'done' && status !== 'success') {
     alert('文件未上传成功，无法复制链接');
     return;
@@ -474,18 +563,18 @@ const handleCopy = (file) => {
 const copyAll = () => {
   let urls;
   if (props.selectedUrlForm === 'url') {
-    urls = fileList.filter(item => item.status === 'done' || item.status === 'success')
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
         .map(item => item.url).join('\n');
   } else if (props.selectedUrlForm === 'md') {
-    urls = fileList.filter(item => item.status ===
+    urls = fileList.value.filter(item => item.status ===
 
         'done' || item.status === 'success')
         .map(item => `![${item.name}](${item.url})`).join('\n');
   } else if (props.selectedUrlForm === 'html') {
-    urls = fileList.filter(item => item.status === 'done' || item.status === 'success')
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
         .map(item => `<img src="${item.url}" alt="${item.name}">`).join('\n');
   } else {
-    urls = fileList.filter(item => item.status === 'done' || item.status === 'success')
+    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
         .map(item => item.url).join('\n');
   }
   navigator.clipboard.writeText(urls);
@@ -496,7 +585,7 @@ const copyAll = () => {
  * 清空文件列表
  */
 const clearFileList = () => {
-  fileList = [];
+  imgPreviewList.value.splice(0, imgPreviewList.value.length);
   alert('列表已清空');
 };
 // endregion
@@ -511,6 +600,9 @@ const clearFileList = () => {
        :class="combinedBgColor">
 
 
+    <el-button @click="submitUpload">点击上传</el-button>
+    <p>fieList is: {{fileList}}</p>
+    <p>imgPreviewList is: {{JSON.stringify(imgPreviewList)}}</p>
     <div class="max-w-7xl max-md:max-w-lg mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
         <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
@@ -522,16 +614,16 @@ const clearFileList = () => {
                     @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
                    class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
 
-              <div v-if="true" class="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-                <el-progress
-                    :type="'circle'"
-                    :percentage="imgPreview.loaded / imgPreview.total * 100"
-                    :status="imgPreview.status"
-                    :text-inside="true"
-                    :stroke-width="4"
-                    :color="imgPreview.status === 'success' ? '#67C23A' : '#F56C6C'"
-                />
-              </div>
+<!--              <div v-if="checkProgress(imgPreview) === 'loading'" class="absolute top-0 left-0 w-full h-full flex justify-center items-center">-->
+<!--                <el-progress-->
+<!--                    :type="'circle'"-->
+<!--                    :percentage="imgPreview.loaded / imgPreview.total * 100"-->
+<!--                    :status="imgPreview.status"-->
+<!--                    :text-inside="true"-->
+<!--                    :stroke-width="4"-->
+<!--                    :color="imgPreview.status === 'success' ? '#67C23A' : '#F56C6C'"-->
+<!--                />-->
+<!--              </div>-->
               <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider
                       absolute top-0 right-0
                       cursor-pointer bg-[#645B5B]
@@ -545,6 +637,7 @@ const clearFileList = () => {
             </div>
           </div>
 
+
         </template>
 
 
@@ -552,10 +645,11 @@ const clearFileList = () => {
 <!--          暂时废弃的粘贴上传功能-->
 <!--        <div  @paste.native="handlePaste">-->
           <el-upload
+              ref="uploadRef"
               :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
               drag
               multiple
-              :http-request="uploadFile"
+
               :onSuccess="handleSuccess"
               :on-error="handleError"
               :before-upload="beforeUpload"
@@ -685,3 +779,5 @@ const clearFileList = () => {
 
 
 </style>
+
+
