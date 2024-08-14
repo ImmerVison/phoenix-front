@@ -1,23 +1,14 @@
 
 <script setup>
-/**
- * 背景颜色属性
- * @typedef {Object} Props
- * @property {string} bgColor - 背景颜色
- * @property {string} selectedUrlForm - 选择的URL格式
- * @property {string} uploadMethod - 上传方法
- */
 
 import { uploader } from '~/api/app/uploader.js';
-
-
 
 // region 图片预览
 
 
 /**
  * @typedef {Object} DataItem
- * @property {File} raw - Contains the raw data.
+ * @property {File} raw  Contains the raw data. 类型为elementui 的 UploadFile
  * @property {string} status - The status of the data.
  */
 /** @type {import('vue').Ref<DataItem[]>} */
@@ -30,7 +21,7 @@ const imgPreviewList = ref([])
 /** @type {number | null} */
 let changeTimer = null;
 
-/** @type {Object[]} */
+/** @type {File[]} */
 let pendingFiles = [];
 
 /**
@@ -122,10 +113,20 @@ const PicPreviewByClick = (fileSrc, fileName) => {
 const handleDownload = (file) => {
   // 实现下载逻辑
 };
-
 // endregion
 
+
+
+
 // region 变量
+/**
+ * 背景颜色属性
+ * @typedef {Object} Props
+ * @property {string} bgColor - 背景颜色
+ * @property {string} selectedUrlForm - 选择的URL格式
+ * @property {string} uploadMethod - 上传方法
+ */
+
 
 /**
  * 组件的props
@@ -159,7 +160,12 @@ const combinedBgColor = computed(() => {
 });
 
 const errorMessage = ref('');
+// endregion
 
+
+
+
+// region computed
 /**
  * 文件对象类型定义
  * uid实际上和file.uid是一样的
@@ -177,6 +183,7 @@ const errorMessage = ref('');
  * Combines UploadingFile with CustomFileProperties
  */
 
+
 /**
  * Custom properties added to the file object.
  * @typedef {Object} CustomFileProperties
@@ -185,10 +192,10 @@ const errorMessage = ref('');
  * @property {Function} onError - Callback function to be called when the upload fails.
  */
 
+
 /** @type {ComputedRef<[]|{uid: ComputedRef<number>, onProgress: function(Object): void, file: ComputedRef<UnwrapRef<{uid: number}>>, onError: function(Error, UploadingFile): void, name: ComputedRef<*>, progress: number, url: ComputedRef<*>, status: string, onSuccess: function(Object, UploadingFile): void}[]>}
  *  */
 // 事实上我只会上传imgPreviewList中的图片, 因此这里的fileList应该由imgPreviewList computed而来
-
 const fileList = computed(() => {
 
   if (imgPreviewList.value.length === 0) {
@@ -202,9 +209,10 @@ const fileList = computed(() => {
         progress: ref(0),
         file: computed(() => {
           if (imgPreview.raw instanceof File) {
-            console.log("这是一个文件对象");
+            return imgPreview.raw
           } else {
-            console.log("这不是一个文件对象");
+            // 非文件, 无法上传, 从imgPreviewList中删除
+            imgPreviewList.value.splice(imgPreviewList.value.indexOf(imgPreview), 1);
           }
           return imgPreview.raw
         }),
@@ -263,58 +271,23 @@ const uploadErrorCount = computed(() => {
 // endregion
 
 // region 上传方法
-
-
-function safeStringify(obj) {
-  const cache = [];
-  const jsonString = JSON.stringify(obj, (key, value) => {
-    if (typeof value === 'object' && value !== null) {
-      if (cache.includes(value)) {
-        return; // 避免循环引用
-      }
-      cache.push(value);
-    }
-    return value;
-  });
-  return jsonString;
-}
-
-
-function base64ToFile(base64, fileName) {
-  // 将 Base64 字符串分割成 MIME 类型和数据部分
-  let arr = base64.split(',');
-  let mime = arr[0].match(/:(.*?);/)[1];
-  let bstr = atob(arr[1]);
-  let n = bstr.length;
-  let u8arr = new Uint8Array(n);
-
-  // 将 Base64 数据转换为字节数组
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-
-  // 创建 File 对象
-  return new File([u8arr], fileName, { type: mime });
-}
-
-
 /**
  * 上传文件方法
  * (options: UploadRequestOptions) => XMLHttpRequest | Promise<unknown>
  * @param {CombinedFile} file - 上传的文件对象
  */
 const uploadFile = (file) => {
-  // console.log(`uploadFile: ${safeStringify(file)}`);
   const uid = file.uid;
-  // const originalFile = base64ToFile(file.url, file.name);
-  const originalFile = unref(file.file); // Ensure that you unref the computed value
+  const originalFile = unref(file.file); // file.file是一个computed, 需要unref
+  const onSuccess = unref(file.onSuccess); // file.onSuccess是一个函数, 需要unref
+  const onError = unref(file.onError); // file.onError是一个函数, 需要unref
+  const onProgress = unref(file.onProgress); // file.onProgress是一个函数, 需要unref
 
-  console.log(`originalFile: ${originalFile}`);
-  if(originalFile instanceof File) {
-    console.log("originalFile是一个文件对象");
-  } else {
-    console.log("originalFile不是一个文件对象");
-  }
+  // if(originalFile instanceof File) {
+  //   console.log("originalFile是一个文件对象");
+  // } else {
+  //   console.log("originalFile不是一个文件对象");
+  // }
 
 
   if (uploadingCount.value > maxUploading.value) {
@@ -322,11 +295,6 @@ const uploadFile = (file) => {
     fileList.value.find(item => item.uid === uid).status = 'waiting';
     return;
   } else {
-    // 这里发现fileList.value为空数组, 但是实际上fileList是一个computed, 只要imgPreviewList变化, fileList也会变化
-    // 为什么会出现这种情况呢?
-    // await new Promise(resolve => setTimeout(resolve, 2000));
-    // console.log(`fileList: ${safeStringify(fileList.value)}`);
-
     const toBeUploadFile = fileList.value.find(item => item.uid === uid);
     toBeUploadFile.status = 'uploading';
   }
@@ -336,7 +304,13 @@ const uploadFile = (file) => {
 
   uploader(formData, file, null)
       .then(res => {
-        file.onSuccess(res, originalFile);
+      //  file.onSuccess(res, originalFile);
+      //   onSuccess(res, originalFile);
+        console.log(`进行上传成功的处理: ${JSON.stringify(res, null, 2)}`);
+        // handleSuccess(res, file);
+        file.onSuccess(res, file);
+        console.log('上传成功处理完毕');
+
       })
       .catch(err => {
         if (err.response && err.response.status === 401) {
@@ -347,10 +321,14 @@ const uploadFile = (file) => {
           alert('认证状态错误！');
           window.location.href = '/login';
         } else {
-          file.onError(err, originalFile);
+          console.log(`进行上传失败的处理: ${JSON.stringify(err, null, 2)}`);
+          // file.onError(err, originalFile);
+          // onError(err, file);
+          handleError(err, file);
         }
       })
       .finally(() => {
+        console.log('进入finally');
         if (uploadingCount.value + waitingCount.value === 0) {
           uploading.value = false;
         }
@@ -399,8 +377,9 @@ const submitUpload = () => {
 // };
 // endregion
 
-// region 上传结果Hook
 
+
+// region 上传结果Hook
 /**
  * 检查上传进度
  * @param {DataItem} imgPreview - 图片预览对象
@@ -441,9 +420,24 @@ const handleProgress = (event) => {
  */
 const handleSuccess = (response, file) => {
   try {
+    const uid = file.uid;
+    console.log(`file is: ${JSON.stringify(file, null, 2)}`);
+    console.log(`uid is: ${uid}`);
     const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const/**@type{CombinedFile} **/ target = fileList.value.find(item => item.uid === file.uid);
+    const/**@type{CombinedFile} **/ target = fileList.value.find(item => item.uid === uid);
+
+
+    //for循环fileList
+    for (let i = 0; i < fileList.value.length; i++) {
+      console.log(`fileList[${i}] is: ${JSON.stringify(fileList.value[i], null, 2)}`);
+      if(fileList.value[i].uid === uid) {
+        console.log(`--------成功-----------`);
+      }
+    }
+
+    console.log(`target: ${JSON.stringify(target, null, 2)}`);
     console.log(`response: ${JSON.stringify(response, null, 2)}`);
+
     target.url = rootUrl + response.data[0].src;
     target.progress = 100;
     target.status = 'success';
@@ -470,6 +464,7 @@ const handleSuccess = (response, file) => {
  * @param {UploadingFile} file - 上传的文件对象
  */
 const handleError = (err, file) => {
+  console.log(`上传失败: ${JSON.stringify(err, null, 2)}`);
   alert(file.name + '上传失败');
   fileList.value.find(item => item.uid === file.uid).status = 'exception';
 
@@ -488,7 +483,8 @@ const handleError = (err, file) => {
  * @param {File} file - 被移除的文件对象
  */
 const handleRemove = (file) => {
-  fileList = fileList.value.filter(item => item.uid !== file.uid);
+  console.log(`处理上传文件移除: ${JSON.stringify(file, null, 2)}`);
+  //fileList = fileList.value.filter(item => item.uid !== file.uid);
   alert(file.name + '已删除');
 };
 // endregion
