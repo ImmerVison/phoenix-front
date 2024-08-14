@@ -3,6 +3,9 @@
 
 import { uploader } from '~/api/app/uploader.js';
 
+const getRespResult = (resp) => {
+  return resp.data[0].src
+}
 // region 图片预览
 
 
@@ -204,7 +207,7 @@ const fileList = computed(() => {
   return imgPreviewList.value.map(imgPreview => ({
         uid: computed(() => imgPreview.raw.uid), // imgPreview.raw.uid的变化会导致uid的变化
         name: computed(() => imgPreview.raw.name),
-        url: computed(() => imgPreview.target.result),
+        url: ref(''),
         status: ref('uploading'), //自定义属性, 独立于imgPreviewList的status
         progress: ref(0),
         file: computed(() => {
@@ -270,6 +273,8 @@ const uploadErrorCount = computed(() => {
 });
 // endregion
 
+const file4Debug = ref({})
+
 // region 上传方法
 /**
  * 上传文件方法
@@ -306,9 +311,12 @@ const uploadFile = (file) => {
       .then(res => {
       //  file.onSuccess(res, originalFile);
       //   onSuccess(res, originalFile);
-        console.log(`进行上传成功的处理: ${JSON.stringify(res, null, 2)}`);
-        // handleSuccess(res, file);
-        file.onSuccess(res, file);
+
+
+
+        handleSuccess(res, file);
+        // file.onSuccess(res, file);
+
         console.log('上传成功处理完毕');
 
       })
@@ -413,48 +421,62 @@ const handleProgress = (event) => {
   }
 };
 
+
+
 /**
  * 处理上传成功
  * @param {Object} response - 响应对象
  * @param {UploadingFile} file - 上传的文件对象
  */
+
+//删除其中的url
+const fileList4ForDebug = computed(() => {
+
+  return fileList.value.map(item => {
+    const {url, file, ...rest} = item
+    return rest
+  })
+})
+
+const imgPreview4Debug = computed(() =>
+{
+  return imgPreviewList.value.map(item => {
+    const {target, ...rest} = item
+    return rest
+  })
+})
+
+const tmpVar4Debug = ref({})
 const handleSuccess = (response, file) => {
   try {
-    const uid = file.uid;
-    console.log(`file is: ${JSON.stringify(file, null, 2)}`);
-    console.log(`uid is: ${uid}`);
+
+    console.log(`执行handleSuccess: ${JSON.stringify(response, null, 2)}`);
+    const {url, ...rest} = file
+    file4Debug.value = rest
     const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const/**@type{CombinedFile} **/ target = fileList.value.find(item => item.uid === uid);
+    const/**@type{CombinedFile} **/ target = fileList.value.find(item => item.uid === file.uid);
+    tmpVar4Debug.value =  target
 
-
-    //for循环fileList
-    for (let i = 0; i < fileList.value.length; i++) {
-      console.log(`fileList[${i}] is: ${JSON.stringify(fileList.value[i], null, 2)}`);
-      if(fileList.value[i].uid === uid) {
-        console.log(`--------成功-----------`);
-      }
-    }
-
-    console.log(`target: ${JSON.stringify(target, null, 2)}`);
-    console.log(`response: ${JSON.stringify(response, null, 2)}`);
-
-    target.url = rootUrl + response.data[0].src;
-    target.progress = 100;
-    target.status = 'success';
-    setTimeout(() => {
-      target.status = 'done';
-    }, 3000);
+    // target.url = rootUrl + response.data[0].src;
+    // target.progress = 100;
+    // target.status = 'success';
+    // setTimeout(() => {
+    //   target.status = 'done';
+    //
+    // }, 3000);
   } catch (error) {
+    console.log(`执行handleSuccess时出错: ${JSON.stringify(error, null, 2)}`);
     alert(file.name + '上传失败');
-    fileList.value.find(item => item.uid === file.uid).status = 'exception';
+    // fileList.value.find(item => item.uid === file.uid).status = 'exception';
   } finally {
-    if (uploadingCount.value + waitingCount.value === 0) {
-      uploading.value = false;
-    }
-    if (waitingList.value.length) {
-      const nextFile = waitingList.value.shift();
-      uploadFile(nextFile);
-    }
+    console.log(`handleSuccess执行完毕`);
+    // if (uploadingCount.value + waitingCount.value === 0) {
+    //   uploading.value = false;
+    // }
+    // if (waitingList.value.length) {
+    //   const nextFile = waitingList.value.shift();
+    //   uploadFile(nextFile);
+    // }
   }
 };
 
@@ -597,8 +619,17 @@ const clearFileList = () => {
 
 
     <el-button @click="submitUpload">点击上传</el-button>
-    <p>fieList is: {{fileList}}</p>
-    <p>imgPreviewList is: {{JSON.stringify(imgPreviewList)}}</p>
+    <p class="bg-slate-600 text-white">fieList is: {{fileList}}</p>
+    <el-divider/>
+    <p class="bg-slate-600 text-white">imgPreviewList is: {{JSON.stringify(imgPreview4Debug)}}</p>
+    <el-divider/>
+
+    <p class="bg-slate-600 text-white">target4Debug is: {{JSON.stringify(tmpVar4Debug)}}</p>
+
+    <el-divider/>
+    <p class="bg-slate-600 text-white">file4Debug is: {{JSON.stringify(file4Debug)}}</p>
+    <el-divider/>
+
     <div class="max-w-7xl max-md:max-w-lg mx-auto">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
         <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
