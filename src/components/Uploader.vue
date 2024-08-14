@@ -167,7 +167,6 @@ const errorMessage = ref('');
 
 
 
-
 // region computed
 /**
  * 文件对象类型定义
@@ -207,9 +206,9 @@ const fileList = computed(() => {
   return imgPreviewList.value.map(imgPreview => ({
         uid: computed(() => imgPreview.raw.uid), // imgPreview.raw.uid的变化会导致uid的变化
         name: computed(() => imgPreview.raw.name),
-        url: ref(''),
-        status: ref('uploading'), //自定义属性, 独立于imgPreviewList的status
-        progress: ref(0),
+        url: '',
+        status: 'uploading', //自定义属性, 独立于imgPreviewList的status
+        progress: 0,
         file: computed(() => {
           if (imgPreview.raw instanceof File) {
             return imgPreview.raw
@@ -219,10 +218,10 @@ const fileList = computed(() => {
           }
           return imgPreview.raw
         }),
-        //需要手动挂载回调函数
-        onSuccess: handleSuccess,
-        onProgress: handleProgress,
-        onError: handleError
+        onProgress: (event) => {
+          handleProgress(event);
+        },
+
   }));
 });
 
@@ -284,16 +283,14 @@ const file4Debug = ref({})
 const uploadFile = (file) => {
   const uid = file.uid;
   const originalFile = unref(file.file); // file.file是一个computed, 需要unref
-  const onSuccess = unref(file.onSuccess); // file.onSuccess是一个函数, 需要unref
-  const onError = unref(file.onError); // file.onError是一个函数, 需要unref
-  const onProgress = unref(file.onProgress); // file.onProgress是一个函数, 需要unref
+  const onProgress = unref(file.onProgress);
+
 
   // if(originalFile instanceof File) {
   //   console.log("originalFile是一个文件对象");
   // } else {
   //   console.log("originalFile不是一个文件对象");
   // }
-
 
   if (uploadingCount.value > maxUploading.value) {
     waitingList.value.push(file);
@@ -309,11 +306,6 @@ const uploadFile = (file) => {
 
   uploader(formData, file, null)
       .then(res => {
-      //  file.onSuccess(res, originalFile);
-      //   onSuccess(res, originalFile);
-
-
-
         handleSuccess(res, file);
         // file.onSuccess(res, file);
 
@@ -323,15 +315,14 @@ const uploadFile = (file) => {
       .catch(err => {
         if (err.response && err.response.status === 401) {
           waitingList.value = [];
-          imgPreviewList.value.slice(0, imgPreviewList.value.length)
+
           //todo 待优化, 重新认证后仍保留之前的图片预览列表
+          imgPreviewList.value.slice(0, imgPreviewList.value.length)
           //fileList.value = [];
           alert('认证状态错误！');
           window.location.href = '/login';
         } else {
           console.log(`进行上传失败的处理: ${JSON.stringify(err, null, 2)}`);
-          // file.onError(err, originalFile);
-          // onError(err, file);
           handleError(err, file);
         }
       })
@@ -393,19 +384,30 @@ const submitUpload = () => {
  * @param {DataItem} imgPreview - 图片预览对象
  * @returns {string} - 上传状态
  */
-// const checkProgress = (imgPreview) => {
-//   // Watch the specific combinedFile's status that matches imgPreview.raw.uid
-//   watch(
-//       () => fileList.value.find(item => item.uid === imgPreview.raw.uid)?.status,
-//       (newStatus) => {
-//         console.log(`newStatus: ${JSON.stringify(newStatus, null, 2)}`);
-//         if (newStatus) {
-//           imgPreview.status = newStatus;
-//         }
-//       },
-//       { immediate: true, deep: true} // Ensures the watch runs immediately for the initial synchronization
-//   );
-// };
+
+fileList.value.forEach((file) => {
+  watch(
+      () => file.status.value,
+      (newValue, oldValue) => {
+        console.log(`文件 ${file.name.value} 的状态变化了: ${oldValue} -> ${newValue}`);
+      }
+  );
+});
+
+const checkProgress = (imgPreview) => {
+  // Watch the specific combinedFile's status that matches imgPreview.raw.uid
+  watch(
+      () => fileList,
+      (newStatus) => {
+        console.log(`检查上传进度: ${newStatus}`);
+
+        if (newStatus) {
+          imgPreview.status = newStatus;
+        }
+      },
+      { immediate: true, deep: true} // Ensures the watch runs immediately for the initial synchronization
+  );
+};
 
 /**
  * 处理上传进度
@@ -430,14 +432,6 @@ const handleProgress = (event) => {
  */
 
 //删除其中的url
-const fileList4ForDebug = computed(() => {
-
-  return fileList.value.map(item => {
-    const {url, file, ...rest} = item
-    return rest
-  })
-})
-
 const imgPreview4Debug = computed(() =>
 {
   return imgPreviewList.value.map(item => {
@@ -445,38 +439,45 @@ const imgPreview4Debug = computed(() =>
     return rest
   })
 })
+const tmpVar4Debug = ref()
 
-const tmpVar4Debug = ref({})
 const handleSuccess = (response, file) => {
   try {
-
-    console.log(`执行handleSuccess: ${JSON.stringify(response, null, 2)}`);
-    const {url, ...rest} = file
-    file4Debug.value = rest
     const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const/**@type{CombinedFile} **/ target = fileList.value.find(item => item.uid === file.uid);
-    tmpVar4Debug.value =  target
 
-    // target.url = rootUrl + response.data[0].src;
-    // target.progress = 100;
-    // target.status = 'success';
-    // setTimeout(() => {
-    //   target.status = 'done';
-    //
-    // }, 3000);
+    for(let i = 0; i < fileList.value.length; i++) {
+      if(fileList.value[i].uid.value === file.uid) {
+        fileList.value[i].url.value = rootUrl + getRespResult(response);
+        fileList.value[i].progress.value = 100;
+        fileList.value[i].status.value = 'success';
+        tmpVar4Debug.value = fileList.value[i];
+        setTimeout(() => {
+          fileList.value[i].status.value = 'done';
+        }, 3000);
+      }
+    }
+
+
+
+
   } catch (error) {
-    console.log(`执行handleSuccess时出错: ${JSON.stringify(error, null, 2)}`);
-    alert(file.name + '上传失败');
-    // fileList.value.find(item => item.uid === file.uid).status = 'exception';
+    alert(`文件${file.name}上传失败, error: ${error}`);
+
+    for(let i = 0; i < fileList.value.length; i++) {
+      if(fileList.value[i].uid.value === file.uid) {
+        fileList.value[i].status.value = 'exception';
+      }
+    }
   } finally {
-    console.log(`handleSuccess执行完毕`);
-    // if (uploadingCount.value + waitingCount.value === 0) {
-    //   uploading.value = false;
-    // }
-    // if (waitingList.value.length) {
-    //   const nextFile = waitingList.value.shift();
-    //   uploadFile(nextFile);
-    // }
+
+    if (uploadingCount.value + waitingCount.value === 0) {
+      uploading.value = false;
+    }
+    if (waitingList.value.length) {
+      const nextFile = waitingList.value.shift();
+      uploadFile(nextFile);
+    }
+
   }
 };
 
@@ -622,10 +623,6 @@ const clearFileList = () => {
     <p class="bg-slate-600 text-white">fieList is: {{fileList}}</p>
     <el-divider/>
     <p class="bg-slate-600 text-white">imgPreviewList is: {{JSON.stringify(imgPreview4Debug)}}</p>
-    <el-divider/>
-
-    <p class="bg-slate-600 text-white">target4Debug is: {{JSON.stringify(tmpVar4Debug)}}</p>
-
     <el-divider/>
     <p class="bg-slate-600 text-white">file4Debug is: {{JSON.stringify(file4Debug)}}</p>
     <el-divider/>
