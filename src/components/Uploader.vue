@@ -308,7 +308,6 @@ const uploadFile = (file) => {
       .then(res => {
         handleSuccess(res, file);
         // file.onSuccess(res, file);
-
         console.log('上传成功处理完毕');
 
       })
@@ -390,12 +389,17 @@ fileList.value.forEach((file) => {
       () => file.status.value,
       (newValue, oldValue) => {
         console.log(`文件 ${file.name.value} 的状态变化了: ${oldValue} -> ${newValue}`);
+      },
+
+      {
+        immediate: true,
+        deep: true
       }
   );
 });
 
 const checkProgress = (imgPreview) => {
-  // Watch the specific combinedFile's status that matches imgPreview.raw.uid
+
   watch(
       () => fileList,
       (newStatus) => {
@@ -405,7 +409,7 @@ const checkProgress = (imgPreview) => {
           imgPreview.status = newStatus;
         }
       },
-      { immediate: true, deep: true} // Ensures the watch runs immediately for the initial synchronization
+      { immediate: true, deep: true}
   );
 };
 
@@ -457,9 +461,6 @@ const handleSuccess = (response, file) => {
       }
     }
 
-
-
-
   } catch (error) {
     alert(`文件${file.name}上传失败, error: ${error}`);
 
@@ -477,7 +478,6 @@ const handleSuccess = (response, file) => {
       const nextFile = waitingList.value.shift();
       uploadFile(nextFile);
     }
-
   }
 };
 
