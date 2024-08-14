@@ -2,6 +2,7 @@
 import LoadingView from "~/pages/LoadingView.vue";
 import {useEventListener, useTimeoutFn} from "@vueuse/core";
 
+
 const onLoading = ref(true);
 const showLoading = ref(true);
 

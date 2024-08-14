@@ -4,7 +4,6 @@
 import {uploader} from '~/api/app/uploader.js'
 import {FileListLike} from "~/types/FileLike.js";
 
-
 // region 变量
 
 const props = defineProps({
@@ -327,6 +326,10 @@ const handleDownload = (file) => {
 </script>
 
 <template>
+
+  <div>
+    <el-button class="center">提交</el-button>
+  </div>
   <div class="px-4 py-6"
        :class="combinedBgColor">
 
@@ -339,7 +342,8 @@ const handleDownload = (file) => {
               <img :src="imgPreview.target.result" alt=""
                     @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
                    class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
-              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider  absolute top-0 right-0
+              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider
+                      absolute top-0 right-0
                       cursor-pointer bg-[#645B5B]
                       hover:text-md hover:bg-opacity-60
                       opacity-0 group-hover:opacity-100
@@ -359,7 +363,6 @@ const handleDownload = (file) => {
               :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
               drag
               multiple
-              :http-request="uploadFile"
               :onSuccess="handleSuccess"
               :on-error="handleError"
               :before-upload="beforeUpload"
@@ -386,13 +389,93 @@ const handleDownload = (file) => {
             </template>
             <img w-full :src="dialogImageUrl" alt="Preview Image" />
           </el-dialog>
+
+
+
         </div>
+
+
 
 
       </div>
 
     </div>
+
   </div>
+  <div class="m-2 p-2 rd-md">
+    <el-card class="" :class="{'upload-list-busy': fileList.length}">
+      <div class="h-[400px]" :class="{'upload-list-busy': fileList.length}">
+        <el-scrollbar>
+          <div class="flex justify-between items-center">
+            <div class="flex space-x-sm">
+              <div class="">
+                <span>上传中: {{ uploadingCount }}/{{ maxUploading }}</span>
+              </div>
+              <div class="">
+                <span>上传成功: {{ uploadSuccessCount }}</span>
+              </div>
+              <div class="">
+                <span>上传失败: {{ uploadErrorCount }}</span>
+              </div>
+            </div>
+            <div class="">
+              <el-button-group>
+
+                <el-tooltip content="整体复制" placement="top">
+                  <el-button type="primary" round @click="copyAll" alt="整体复制">
+                    <el-icon><div class="i-carbon:copy w-16px h-16px" style="color: white;"></div></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="清空列表" placement="top">
+                  <el-button type="primary" round @click="clearFileList">
+
+                    <el-icon><div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </el-button-group>
+            </div>
+          </div>
+
+
+
+          <div class="flex justify-between items-center p-[5px] b-1"
+               v-for="file in imgPreviewList" :key="file.name" :span="8">
+            <img
+
+                class="object-cover"
+                style="width: 10vw; height: 160px;  border-radius: 12px;"
+                :src="file.target.result"
+                @error="file.url = 'https://imgbed.sanyue.site/file/b6a4a65b4edba4377492e.png'"
+            />
+            <div class="">
+              <el-text class="truncated text-white">{{ file.raw.uid }}</el-text>
+              <div class="upload-list-item-url" v-if="file.status==='done'">
+                <el-link :underline="false" :href="file.url" target="_blank">
+                  <el-text class="upload-list-item-url-text" truncated>{{ file.raw.uid }}</el-text>
+                </el-link>
+              </div>
+              <div class="upload-list-item-progress" v-else>
+                <el-progress type="circle" :percentage="50" :status="file.status" :show-text="false"/>
+              </div>
+            </div>
+            <div class="">
+              <el-button type="primary" circle class="" @click="handleCopy(file)">
+                <el-icon><div class="i-carbon:link w-16px h-16px" style="color: white;"></div></el-icon>
+              </el-button>
+              <el-button type="danger" circle class="" @click="handleRemove(file)">
+                <el-icon ><div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div></el-icon>
+              </el-button>
+            </div>
+          </div>
+
+
+        </el-scrollbar>
+      </div>
+    </el-card>
+
+  </div>
+
+
 
 
 </template>
@@ -422,11 +505,32 @@ const handleDownload = (file) => {
   mask-size: 100% 100%;
   background-color: currentColor;
   color: inherit;
-  width: 1.2em;
-  height: 1.2em;
+  width: 16px;
+  height: 16px;
+  --at-apply: 'font-bold opacity-100 focus-within:opacity-100 w-[2em] h-[2em]';
+}
+
+
+
+.i-material-symbols-content-copy-outline-rounded {
+  --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 24 24' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M9 18q-.825 0-1.412-.587T7 16V4q0-.825.588-1.412T9 2h9q.825 0 1.413.588T20 4v12q0 .825-.587 1.413T18 18zm0-2h9V4H9zm-4 6q-.825 0-1.412-.587T3 20V7q0-.425.288-.712T4 6t.713.288T5 7v13h10q.425 0 .713.288T16 21t-.288.713T15 22zm4-6V4z'/%3E%3C/svg%3E");
+  -webkit-mask: var(--un-icon) no-repeat;
+  mask: var(--un-icon) no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  background-color: currentColor;
+  color: inherit;
+  width: 0.8em;
+  height: 0.8em;
+
   --at-apply: 'font-bold opacity-100 focus-within:opacity-100';
 }
 
+
+.center{
+  margin: 0.5rem auto;
+  display: block;
+}
 
 @keyframes breathe {
   0%, 100% {
@@ -438,9 +542,6 @@ const handleDownload = (file) => {
 }
 
 
-.paste-mode :deep(.el-upload) {
-  pointer-events: none;
-}
 
 
 
@@ -476,15 +577,12 @@ const handleDownload = (file) => {
   opacity: 0.8;
   box-shadow: 0 0 10px 5px #409EFF;
 }
-.is-uploading :deep(.el-upload-dragger){
-  animation: breathe 3s infinite;
-}
+
 .el-upload__text {
   font-weight: bold;
   font-size: medium;
   user-select: none;
 }
-
 
 
 
