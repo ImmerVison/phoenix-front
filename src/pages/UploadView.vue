@@ -9,7 +9,7 @@
       <h1 class="text-gradient inline-block font-quicksand text-3xl font-700 hover:underline underline-dotted">
         图片上传
       </h1>
-      <div class="card rd-md mt-4 flex-col justify-center gap-8 space-y-lg">
+      <div class=" rd-md mt-4 flex-col justify-center gap-8 space-y-lg min-w-md">
 
        <div>
          <h1 class="text-2xl">
@@ -25,7 +25,7 @@
         <div class="option-title">
           <span class="inline-block  i-ph-dot-outline-fill"/>上传图片
         </div>
-        <div class="border-2 rd-md wrapper">
+        <div class="border-2 rd-md wrapper min-w-md">
           <Uploader :bg-color="'#F8F9FA'"/>
         </div>
       </div>

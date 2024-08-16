@@ -26,7 +26,7 @@ const showLoading = ref(true);
 <template>
 
 
-    <RouterView />
+    <RouterView class="min-w-md"/>
 
 </template>
 

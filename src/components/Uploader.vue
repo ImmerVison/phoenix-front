@@ -111,15 +111,6 @@ const beforeUpload = (file) => {
     return true;
   }
 };
-
-//todo
-const submitUpload = () => {
-  fileList.value.forEach(file => {
-    if (file.status === 'done' || file.status === 'success') {
-      handleCopy(file);
-    }
-  });
-};
 // endregion
 
 
@@ -322,43 +313,53 @@ const handleDownload = (file) => {
 
 // endregion
 
-
+// region 提交上传 todo
+// const submitUpload = () => {
+//   alert('提交上传');
+//   imgPreviewList.value.forEach(imgPreview => {
+//     const file = imgPreview.raw
+//     if (beforeUpload(file)) {
+//       console.log(`准备上传文件: ${file.name}`);
+//       uploadFile(fileList.value.find(item => item.uid === file.uid));
+//     }
+//   })
+// };
+// endregion
 </script>
 
 <template>
 
-  <div>
-    <el-button class="center">提交</el-button>
-  </div>
-  <div class="px-4 py-6"
+<div class="min-w-md bg-white rd-md">
+  <div class="px-4 py-6 "
        :class="combinedBgColor">
 
 
     <div class="max-w-7xl max-md:max-w-lg mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
-        <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
-          <div class="bg-white rounded-md overflow-hidden group">
-            <div class="relative overflow-hidden group">
-              <img :src="imgPreview.target.result" alt=""
-                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
-                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
-              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider
-                      absolute top-0 right-0
-                      cursor-pointer bg-[#645B5B]
-                      hover:text-md hover:bg-opacity-60
-                      opacity-0 group-hover:opacity-100
-                      transition-opacity duration-300
-                      focus-within:opacity-100"
-                   @click="deleteImg(index)">
-                <div class="i-material-symbols-delete-sweep-outline-rounded "/>
-              </div>
-            </div>
-          </div>
+      <div class="flex">
 
-        </template>
+        <!--        <template v-for="(imgPreview, index) in imgPreviewList" :key="index">-->
+        <!--          <div class="bg-white rounded-md overflow-hidden group">-->
+        <!--            <div class="relative overflow-hidden group">-->
+        <!--              <img :src="imgPreview.target.result" alt=""-->
+        <!--                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"-->
+        <!--                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>-->
+        <!--              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider-->
+        <!--                      absolute top-0 right-0-->
+        <!--                      cursor-pointer bg-[#645B5B]-->
+        <!--                      hover:text-md hover:bg-opacity-60-->
+        <!--                      opacity-0 group-hover:opacity-100-->
+        <!--                      transition-opacity duration-300-->
+        <!--                      focus-within:opacity-100"-->
+        <!--                   @click="deleteImg(index)">-->
+        <!--                <div class="i-material-symbols-delete-sweep-outline-rounded "/>-->
+        <!--              </div>-->
+        <!--            </div>-->
+        <!--          </div>-->
+
+        <!--        </template>-->
 
 
-        <div  @paste.native="handlePaste">
+        <div class="w-full"  @paste.native="handlePaste">
           <el-upload
               :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
               drag
@@ -404,10 +405,10 @@ const handleDownload = (file) => {
   </div>
   <div class="m-2 p-2 rd-md">
     <el-card class="" :class="{'upload-list-busy': fileList.length}">
-      <div class="h-[400px]" :class="{'upload-list-busy': fileList.length}">
+      <div class="h-[200px]" :class="{'upload-list-busy': fileList.length}">
         <el-scrollbar>
-          <div class="flex justify-between items-center">
-            <div class="flex space-x-sm">
+          <div class="p-2 bg-slate- flex justify-between items-center">
+            <div class=" flex space-x-sm">
               <div class="">
                 <span>上传中: {{ uploadingCount }}/{{ maxUploading }}</span>
               </div>
@@ -418,7 +419,7 @@ const handleDownload = (file) => {
                 <span>上传失败: {{ uploadErrorCount }}</span>
               </div>
             </div>
-            <div class="">
+            <div>
               <el-button-group>
 
                 <el-tooltip content="整体复制" placement="top">
@@ -438,11 +439,11 @@ const handleDownload = (file) => {
 
 
 
-          <div class="flex justify-between items-center p-[5px] b-1"
+          <div class="flex justify-between items-center p-[5px] b-1 "
                v-for="file in imgPreviewList" :key="file.name" :span="8">
             <img
 
-                class="object-cover"
+                class="object-cover shadow-lg"
                 style="width: 10vw; height: 160px;  border-radius: 12px;"
                 :src="file.target.result"
                 @error="file.url = 'https://imgbed.sanyue.site/file/b6a4a65b4edba4377492e.png'"
@@ -474,6 +475,7 @@ const handleDownload = (file) => {
     </el-card>
 
   </div>
+</div>
 
 
 
