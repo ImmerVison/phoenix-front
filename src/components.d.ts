@@ -7,12 +7,21 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    CropPicture: typeof import('./components/uploader/crop-picture.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElDialog: typeof import('element-plus/es')['ElDialog']
+    ElEmpty: typeof import('element-plus/es')['ElEmpty']
     ElIcon: typeof import('element-plus/es')['ElIcon']
+    ElImage: typeof import('element-plus/es')['ElImage']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    NoImage: typeof import('./components/icnos/NoImage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Upload: typeof import('./components/uploader/upload.vue')['default']
+    UploadDraggle: typeof import('./components/uploader/upload-draggle.vue')['default']
     Uploader: typeof import('./components/Uploader.vue')['default']
+    UploadFileItem: typeof import('./components/uploader/upload-file-item.vue')['default']
+    UploadPicture: typeof import('./components/uploader/upload-picture.vue')['default']
+    UploadPictureItem: typeof import('./components/uploader/upload-picture-item.vue')['default']
   }
 }

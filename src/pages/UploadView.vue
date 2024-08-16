@@ -9,6 +9,11 @@
       <h1 class="text-gradient inline-block font-quicksand text-3xl font-700 hover:underline underline-dotted">
         图片上传
       </h1>
+
+
+
+
+
       <div class="card rd-md mt-4 flex-col justify-center gap-8 space-y-lg">
 
        <div>
@@ -41,7 +46,6 @@
 
 
         </div>
-
 
       </div>
 
@@ -91,7 +95,7 @@
 
 import {ref} from "vue";
 import {useDark} from "@vueuse/core";
-
+import NoImage from "~/components/icnos/NoImage.vue";
 const isDark = useDark();
 
 const selectedUrlForm = ref('url');

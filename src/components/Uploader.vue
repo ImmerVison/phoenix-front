@@ -2,396 +2,133 @@
 // import cookies from 'vue-cookies'
 
 import {uploader} from '~/api/app/uploader.js'
-import {FileListLike} from "~/types/FileLike.js";
-
-
-// region 变量
-
-const props = defineProps({
-  bgColor: {
-    type: String,
-    default: '',
-    required: false
-  },
-  selectedUrlForm: {
-    type: String,
-    default: 'url',
-    required: false
-  },
-  uploadMethod: {
-    type: String,
-    default: 'drag',
-    required: false
-  }
-
-});
-
-// 动态计算背景颜色
-const combinedBgColor = computed(() => {
-  const defaultClass = 'bg-slate-200'
-  return props.bgColor === '' ? defaultClass : props.bgColor;
-});
-const errorMessage = ref('');
-
-
-const fileList = ref([]);
-
-const uploading = ref(false);
-
-const maxUploading = ref(10);
-
-const waitingList = ref([]);
-
-
-const uploadingCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'uploading').length;
-});
-
-const waitingCount = computed(() => {
-  return waitingList.value.length;
-});
-
-
-const uploadSuccessCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'done' || item.status === 'success').length;
-});
-
-const uploadErrorCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'exception').length;
-});
-// endregion
-
-
-// region 上传方法
-const uploadFile = (file) => {
-  if (uploadingCount.value > maxUploading.value) {
-    waitingList.value.push(file);
-    fileList.value.find(item => item.uid === file.file.uid).status = 'waiting';
-    return;
-  } else {
-    fileList.value.find(item => item.uid === file.file.uid).status = 'uploading';
-  }
-
-  const formData = new FormData();
-  formData.append('file', file.file);
-
-  uploader(formData, file, null)
-      .then(res => {
-        file.onSuccess(res, file.file);
-      }).catch(err => {
-    if (err.response && err.response.status === 401) {
-      waitingList.value = [];
-      fileList.value = [];
-      alert('认证状态错误！'); // 使用 alert 代替 this.$message
-      window.location.href = '/login'; // 使用 window.location.href 代替 this.$router.push
-    } else {
-      file.onError(err, file.file);
-    }
-  }).finally(() => {
-    if (uploadingCount.value + waitingCount.value === 0) {
-      uploading.value = false;
-    }
-  });
-};
-
-const beforeUpload = (file) => {
-  const isLt10M = Math.ceil(file.size / 1024 / 1024) < 10;
-  if (!isLt10M) {
-    alert('上传文件大小不能超过 10MB!');
-    return false;
-  } else {
-    uploading.value = true;
-    const fileUrl = URL.createObjectURL(file);
-    fileList.value.push({
-      uid: file.uid,
-      name: file.name,
-      url: fileUrl,
-      status: 'uploading',
-      progress: 0
-    });
-    return true;
-  }
-};
-
-//todo
-const submitUpload = () => {
-  fileList.value.forEach(file => {
-    if (file.status === 'done' || file.status === 'success') {
-      handleCopy(file);
-    }
-  });
-};
-// endregion
-
-
-
-// region 上传结果Hook
-
-const handleProgress = (event) => {
-  const target = fileList.value.find(item => item.uid === event.file.uid);
-  if (target) {
-    target.progreess = event.percent;
-  }
-};
-const handleSuccess = (response, file) => {
-  try {
-    const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const target = fileList.value.find(item => item.uid === file.uid);
-    target.url = rootUrl + response.data[0].src;
-    target.progreess = 100;
-    target.status = 'success';
-    alert(file.name + '上传成功');
-
-    setTimeout(() => {
-      target.status = 'done';
-    }, 3000);
-  } catch (error) {
-    alert(file.name + '上传失败');
-    fileList.value.find(item => item.uid === file.uid).status = 'exception';
-  } finally {
-    if (uploadingCount.value + waitingCount.value === 0) {
-      uploading.value = false;
-
-    }
-    if (waitingList.value.length) {
-      const nextFile = waitingList.value.shift();
-      uploadFile(nextFile);
-    }
-  }
-};
-
-const handleError = (err, file) => {
-  alert(file.name + '上传失败');
-  fileList.value.find(item => item.uid === file.uid).status = 'exception';
-
-  if (waitingList.value.length) {
-    const nextFile = waitingList.value.shift();
-    uploadFile(nextFile);
-  }
-
-  if (uploadingCount.value + waitingCount.value === 0) {
-    uploading.value = false;
-  }
-};
-
-const handleRemove = (file) => {
-  fileList.value = fileList.value.filter(item => item.uid !== file.uid);
-  alert(file.name + '已删除');
-};
-// endregion
-
-
-// region 功能性方法: 粘贴上传 & 复制链接 & 整体复制  & 清空列表
-const handlePaste = (event) => {
-  if (props.uploadMethod !== 'paste') {
-    return;
-  }
-
-  const items = event.clipboardData.items;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].kind === 'file') {
-      const file = items[i].getAsFile();
-      if (file.type.includes('image') || file.type.includes('video')) {
-        file.uid = Date.now() + i;
-        file.file = file;
-        if (beforeUpload(file)) {
-          uploadFile({
-            file: file,
-            onProgress: handleProgress,
-            onSuccess: handleSuccess,
-            onError: handleError
-          });
-        }
-      } else {
-        alert('粘贴板中的文件不是图片或视频');
-      }
-    }
-  }
-};
-
-const handleCopy = (file) => {
-  const status = fileList.value.find(item => item.uid === file.uid).status;
-  if (status !== 'done' && status !== 'success') {
-    alert('文件未上传成功，无法复制链接');
-    return;
-  }
-
-  let textToCopy;
-  if (props.selectedUrlForm === 'url') {
-    textToCopy = file.url;
-  } else if (props.selectedUrlForm === 'md') {
-    textToCopy = `![${file.name}](${file.url})`;
-  } else if (props.selectedUrlForm === 'html') {
-    textToCopy = `<img src="${file.url}" alt="${file.name}">`;
-  } else {
-    textToCopy = file.url;
-  }
-
-  navigator.clipboard.writeText(textToCopy);
-  alert('复制成功');
-};
-
-const copyAll = () => {
-  let urls;
-  if (props.selectedUrlForm === 'url') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => item.url).join('\n');
-  } else if (props.selectedUrlForm === 'md') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => `![${item.name}](${item.url})`).join('\n');
-  } else if (props.selectedUrlForm === 'html') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => `<img src="${item.url}" alt="${item.name}">`).join('\n');
-  } else {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => item.url).join('\n');
-  }
-  navigator.clipboard.writeText(urls);
-  alert('整体复制成功');
-};
-
-const clearFileList = () => {
-  fileList.value = [];
-  alert('列表已清空');
-};
-// endregion
-
-
-
-// region 图片预览
-const imgPreviewList = ref([])
-let changeTimer = null; // 用于控制事件合并的计时器
-let pendingFiles = []; // 用于存储待处理的文件列表
-
-const handleFileChange = (file, rawFileList) => {
-  // 将文件暂存到 pendingFiles 中
-  pendingFiles.push(file);
-
-  // 如果有计时器在运行，清除它
-  if (changeTimer) {
-    clearTimeout(changeTimer);
-  }
-
-  // 设置一个新的计时器，200ms 后处理所有文件
-  changeTimer = setTimeout(() => {
-    processFiles(pendingFiles);
-    pendingFiles = []; // 清空待处理的文件列表
-  }, 100);
-};
-
-const processFiles = (files) => {
-  // 可以调用之前的 uploadImg 方法进行处理
-  const filesArray = files.map(f => f.raw || f);
-  const filesLikeList = new FileListLike(filesArray);
-  fileReader(filesLikeList, 0);
-};
-
-
-const fileReader = (files, index) => {
-  let reader = new FileReader()
-  reader.readAsDataURL(files[index])
-  reader.onload = (e) => {
-
-    imgPreviewList.value.push(Object.assign(e, {
-      raw: files[index]
-    }))
-    if (++index < files.length) fileReader(files, index)
-  }
-
-}
-
-const deleteImg = (index) => {
-  imgPreviewList.value.splice(index, 1)
-}
-
-
 
 const dialogImageUrl = ref('')
-const dialogImageName = ref('')
 const dialogVisible = ref(false)
 const disabled = ref(false)
+const fileList = ref([])
 
-const PicPreviewByClick = (fileSrc, fileName) => {
-  dialogImageUrl.value = fileSrc
-  dialogImageName.value = fileName
-  dialogVisible.value = true
+const uploadFile = (file) => {
+
+  const formData = new FormData()
+  formData.append('file', file)
+  uploader(formData)
+      .then(res => {
+        handleSuccess(res, file)
+      }).catch(err => {
+    if (err.response && err.response.status === 401) {
+      this.$message.error('认证状态错误！')
+      this.$router.push('/login')
+    } else {
+      handleSuccess(err, file)
+    }
+  }).finally(() => {
+
+  })
 }
 
-const handleDownload = (file) => {
-  //todo
+
+const handleSuccess = (response, file) => {
+  try {
+    const rootUrl = `${window.location.protocol}//${window.location.host}`
+    // this.fileList.find(item => item.uid === file.uid).url = rootUrl + response.data[0].src
+    // this.fileList.find(item => item.uid === file.uid).progreess = 100
+    // this.fileList.find(item => item.uid === file.uid).status = 'success'
+    this.$message({
+      type: 'success',
+      message: `${file.name}上传成功! 路径为${response.data[0].src}`
+    })
+    setTimeout(() => {
+
+      //
+    }, 3000)
+  } catch (error) {
+    this.$message.error(file.name + '上传失败')
+  } finally {
+
+  }
+}
+const handleError = (err, file) => {
+  this.$message.error(file.name + '上传失败')
+
 }
 
-// endregion
+const beforeUpload = (file) => {
+  const isLt5M = file.size / 1024 / 1024 < 5
+  if (!isLt5M) {
+    this.$message.error('上传文件大小不能超过 5MB!')
+    return false
+  } else {
+    fileList.value.push(file)
+    return true
+  }
+}
+const handleProgress = (event) => {
+  this.fileList.find(item => item.uid === event.file.uid).progreess = event.percent
+}
 
 
 </script>
 
 <template>
   <div class="px-4 py-6"
-       :class="combinedBgColor">
+       :class="{}">
 
+    <div @paste.native="">
+      <el-upload
+          class=""
+          :http-request="uploadFile"
+          :show-file-list="false"
+          accept="image/*, video/*"
+          v-model:file-list="fileList"
+          multiple
+          list-type="picture-card"
+      >
 
-    <div class="max-w-7xl max-md:max-w-lg mx-auto">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
-        <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
-          <div class="bg-white rounded-md overflow-hidden group">
-            <div class="relative overflow-hidden group">
-              <img :src="imgPreview.target.result" alt=""
-                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
-                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
-              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider  absolute top-0 right-0
-                      cursor-pointer bg-[#645B5B]
-                      hover:text-md hover:bg-opacity-60
-                      opacity-0 group-hover:opacity-100
-                      transition-opacity duration-300
-                      focus-within:opacity-100"
-                   @click="deleteImg(index)">
-                <div class="i-material-symbols-delete-sweep-outline-rounded "/>
+        <el-icon>
+          <div class="i-ph-upload-light"/>
+        </el-icon>
+
+        <template #file="{ file }">
+
+          <el-image class="flex justify-center items-center w-full" :src="file.url">
+            <template #error>
+              <div class="error-container">
+                <el-icon>
+                  <div class="i-carbon:no-image"></div>
+                </el-icon>
               </div>
-            </div>
-          </div>
+            </template>
+          </el-image>
+
+          <span class="el-upload-list__item-actions">
+              <span
+                  class="el-upload-list__item-preview"
+                  @click="handlePictureCardPreview(file)"
+              >
+            <el-icon><div class="i-carbon:view"/></el-icon>
+          </span>
+              <span
+                  v-if="!disabled"
+                  class="el-upload-list__item-delete"
+                  @click="handleRemove(file)"
+              >
+                <el-icon><div class="i-material-symbols-delete-sweep-outline-rounded"/></el-icon>
+               </span>
+            </span>
 
         </template>
+      </el-upload>
 
-
-        <div  @paste.native="handlePaste">
-          <el-upload
-              :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
-              drag
-              multiple
-              :http-request="uploadFile"
-              :onSuccess="handleSuccess"
-              :on-error="handleError"
-              :before-upload="beforeUpload"
-              :on-progress="handleProgress"
-              :file-list="fileList"
-              :show-file-list="false"
-              accept="image/*, video/*"
-              @change="handleFileChange"
-              :auto-upload="false"
-          >
-            <el-icon class="el-icon--upload">
-              <div class="i-ph-upload-light"></div>
-            </el-icon>
-            <div class="el-upload__text">
-              <p class="text-xs text-gray-400 mt-2">PNG, JPG SVG, WEBP, and GIF are Allowed.</p>
-            </div>
-
-
-          </el-upload>
-
-          <el-dialog v-model="dialogVisible">
-            <template #header="{ close, titleId, titleClass }">
-              <h4 :id="titleId" :class="titleClass" class="text-ellipsis">{{dialogImageName}}</h4>
-            </template>
-            <img w-full :src="dialogImageUrl" alt="Preview Image" />
-          </el-dialog>
-        </div>
-
-
-      </div>
-
+      <el-dialog v-model="dialogVisible">
+        <template #header="{ close, titleId, titleClass }">
+          <h4 :id="titleId" :class="titleClass" class="text-ellipsis">{{ titleId }}</h4>
+        </template>
+        <img w-full :src="dialogImageUrl" alt="Preview Image"/>
+      </el-dialog>
     </div>
+
+
   </div>
 
 
@@ -443,19 +180,19 @@ const handleDownload = (file) => {
 }
 
 
-
-.is-uploading :deep(.el-upload-dragger){
+.is-uploading :deep(.el-upload-dragger) {
   animation: breathe 3s infinite;
 }
 
 .upload-card-busy :deep(.el-upload-dragger) {
   height: 25vh;
 }
+
 .paste-mode :deep(.el-upload) {
   pointer-events: none;
 }
 
-:deep(.el-upload-dragger)  {
+:deep(.el-upload-dragger) {
   --at-apply: h-60;
   display: flex;
   flex-direction: column;
@@ -468,17 +205,21 @@ const handleDownload = (file) => {
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
+
 :deep(.el-upload-dragger:hover) {
   opacity: 0.8;
   box-shadow: 0 0 10px 5px #409EFF;
 }
+
 :deep(.el-upload-dragger.is-dragover) {
   opacity: 0.8;
   box-shadow: 0 0 10px 5px #409EFF;
 }
-.is-uploading :deep(.el-upload-dragger){
+
+.is-uploading :deep(.el-upload-dragger) {
   animation: breathe 3s infinite;
 }
+
 .el-upload__text {
   font-weight: bold;
   font-size: medium;
@@ -486,6 +227,18 @@ const handleDownload = (file) => {
 }
 
 
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.i-carbon\:no-image {
+  font-size: 48px; /* Adjust the size of the icon */
+  color: #ccc; /* Adjust the color of the icon */
+}
 
 
 </style>
