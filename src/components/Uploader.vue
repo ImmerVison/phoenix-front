@@ -1,11 +1,140 @@
-<script setup>
-// import cookies from 'vue-cookies'
 
-import {uploader} from '~/api/app/uploader.js'
-import {FileListLike} from "~/types/FileLike.js";
+<script setup>
+
+import { uploader } from '~/api/app/uploader.js';
+
+const getRespResult = (resp) => {
+  return resp.data[0].src
+}
+// region 图片预览
+
+
+/**
+ * @typedef {Object} DataItem
+ * @property {File} raw  Contains the raw data. 类型为elementui 的 UploadFile
+ * @property {string} status - The status of the data.
+ */
+/** @type {import('vue').Ref<DataItem[]>} */
+//const imgPreviewList = reactive([]);
+const imgPreviewList = ref([])
+
+
+
+
+/** @type {number | null} */
+let changeTimer = null;
+
+/** @type {File[]} */
+let pendingFiles = [];
+
+/**
+ * 处理文件变更事件
+ * @param {File} file - 变更的文件对象,类型为elementui 的 UploadFile
+ * @param {File[]} rawFileList - 原始文件列表 UploadFile[]
+ */
+const handleFileChange = (file, rawFileList) => {
+  pendingFiles.push(file);
+  if (changeTimer) {
+    clearTimeout(changeTimer);
+  }
+
+  changeTimer = setTimeout(() => {
+    processFiles(pendingFiles);
+    pendingFiles = [];
+  }, 100);
+};
+
+/**
+ * 处理文件列表
+ * @param {File[]} files - 文件数组
+ */
+const processFiles = (files) => {
+  const filesArray = files.map(f => f.raw || f);
+  fileReader(filesArray, 0);
+};
+
+/**
+ * 读取文件内容
+ * @param {File[]} files - 文件数组
+ * @param {number} index - 当前文件索引
+ */
+const fileReader = (files, index) => {
+  let reader = new FileReader();
+  reader.readAsDataURL(files[index]);
+  reader.onload = (e) => {
+    imgPreviewList.value.push(Object.assign(e, {
+      raw: files[index],
+      status: 'loading',
+    }));
+    if (++index < files.length) fileReader(files, index);
+
+    // //设一个定时器, 5s后改变imgPreviewList中的status
+    // setTimeout(() => {
+    //   imgPreviewList.value.forEach((imgPreview) => {
+    //     if (imgPreview.status === 'loading') {
+    //       imgPreview.status = 'done';
+    //     }
+    //   });
+    // }, 1000);
+  };
+};
+
+/**
+ * 删除预览图片
+ * @param {number} index - 要删除的图片索引
+ */
+const deleteImg = (index) => {
+  imgPreviewList.value.splice(index, 1);
+};
+
+/** @type {import('vue').Ref<string>} */
+const dialogImageUrl = ref('');
+
+/** @type {import('vue').Ref<string>} */
+const dialogImageName = ref('');
+
+/** @type {import('vue').Ref<boolean>} */
+const dialogVisible = ref(false);
+
+
+/**
+ * 点击图片预览
+ * @param {string} fileSrc - 图片源路径
+ * @param {string} fileName - 图片名称
+ */
+const PicPreviewByClick = (fileSrc, fileName) => {
+  dialogImageUrl.value = fileSrc;
+  dialogImageName.value = fileName;
+  dialogVisible.value = true;
+};
+
+/**
+ * 下载文件的方法
+ * @param {File} file - 要下载的文件对象
+ */
+//todo
+const handleDownload = (file) => {
+  // 实现下载逻辑
+};
+// endregion
+
+
+
 
 // region 变量
+/**
+ * 背景颜色属性
+ * @typedef {Object} Props
+ * @property {string} bgColor - 背景颜色
+ * @property {string} selectedUrlForm - 选择的URL格式
+ * @property {string} uploadMethod - 上传方法
+ */
 
+
+/**
+ * 组件的props
+ * @type {Props}
+ */
 const props = defineProps({
   bgColor: {
     type: String,
@@ -22,126 +151,328 @@ const props = defineProps({
     default: 'drag',
     required: false
   }
-
 });
 
-// 动态计算背景颜色
+/**
+ * 动态计算背景颜色
+ * @returns {string}
+ */
 const combinedBgColor = computed(() => {
-  const defaultClass = 'bg-slate-200'
+  const defaultClass = 'bg-slate-200';
   return props.bgColor === '' ? defaultClass : props.bgColor;
 });
+
 const errorMessage = ref('');
+// endregion
 
 
-const fileList = ref([]);
 
+// region computed
+/**
+ * 文件对象类型定义
+ * uid实际上和file.uid是一样的
+ * @typedef {Object} UploadingFile
+ * @property {string} uid - 文件唯一标识
+ * @property {string} name - 文件名
+ * @property {string} url - 文件URL
+ * @property {string} status - 文件状态
+ * @property {number} progress - 上传进度
+ * @property {File} file - 原始文件对象
+ */
+
+/**
+ * @typedef {UploadingFile & CustomFileProperties} CombinedFile
+ * Combines UploadingFile with CustomFileProperties
+ */
+
+
+/**
+ * Custom properties added to the file object.
+ * @typedef {Object} CustomFileProperties
+ * @property {Function} onSuccess - Callback function to be called when the upload succeeds.
+ * @property {Function} onProgress - Callback function to be called to track the upload progress.
+ * @property {Function} onError - Callback function to be called when the upload fails.
+ */
+
+
+/** @type {ComputedRef<[]|{uid: ComputedRef<number>, onProgress: function(Object): void, file: ComputedRef<UnwrapRef<{uid: number}>>, onError: function(Error, UploadingFile): void, name: ComputedRef<*>, progress: number, url: ComputedRef<*>, status: string, onSuccess: function(Object, UploadingFile): void}[]>}
+ *  */
+// 事实上我只会上传imgPreviewList中的图片, 因此这里的fileList应该由imgPreviewList computed而来
+const fileList = computed(() => {
+
+  if (imgPreviewList.value.length === 0) {
+    return [];
+  }
+  return imgPreviewList.value.map(imgPreview => ({
+        uid: computed(() => imgPreview.raw.uid), // imgPreview.raw.uid的变化会导致uid的变化
+        name: computed(() => imgPreview.raw.name),
+        url: '',
+        status: 'uploading', //自定义属性, 独立于imgPreviewList的status
+        progress: 0,
+        file: computed(() => {
+          if (imgPreview.raw instanceof File) {
+            return imgPreview.raw
+          } else {
+            // 非文件, 无法上传, 从imgPreviewList中删除
+            imgPreviewList.value.splice(imgPreviewList.value.indexOf(imgPreview), 1);
+          }
+          return imgPreview.raw
+        }),
+        onProgress: (event) => {
+          handleProgress(event);
+        },
+
+  }));
+});
+
+
+
+
+/** @type {import('vue').Ref<boolean>} */
 const uploading = ref(false);
 
+
+
+/** @type {import('vue').Ref<number>} */
 const maxUploading = ref(10);
 
+/** @type {import('vue').Ref<CombinedFile[]>} */
 const waitingList = ref([]);
 
-
+/**
+ * 计算上传中的文件数量
+ * @returns {number}
+ */
 const uploadingCount = computed(() => {
   return fileList.value.filter(item => item.status === 'uploading').length;
 });
 
+/**
+ * 计算等待上传的文件数量
+ * @returns {number}
+ */
 const waitingCount = computed(() => {
   return waitingList.value.length;
 });
 
-
+/**
+ * 计算上传成功的文件数量
+ * @returns {number}
+ */
 const uploadSuccessCount = computed(() => {
   return fileList.value.filter(item => item.status === 'done' || item.status === 'success').length;
 });
 
+/**
+ * 计算上传失败的文件数量
+ * @returns {number}
+ */
 const uploadErrorCount = computed(() => {
   return fileList.value.filter(item => item.status === 'exception').length;
 });
 // endregion
 
+const file4Debug = ref({})
 
 // region 上传方法
+/**
+ * 上传文件方法
+ * (options: UploadRequestOptions) => XMLHttpRequest | Promise<unknown>
+ * @param {CombinedFile} file - 上传的文件对象
+ */
 const uploadFile = (file) => {
+  const uid = file.uid;
+  const originalFile = unref(file.file); // file.file是一个computed, 需要unref
+  const onProgress = unref(file.onProgress);
+
+
+  // if(originalFile instanceof File) {
+  //   console.log("originalFile是一个文件对象");
+  // } else {
+  //   console.log("originalFile不是一个文件对象");
+  // }
+
   if (uploadingCount.value > maxUploading.value) {
     waitingList.value.push(file);
-    fileList.value.find(item => item.uid === file.file.uid).status = 'waiting';
+    fileList.value.find(item => item.uid === uid).status = 'waiting';
     return;
   } else {
-    fileList.value.find(item => item.uid === file.file.uid).status = 'uploading';
+    const toBeUploadFile = fileList.value.find(item => item.uid === uid);
+    toBeUploadFile.status = 'uploading';
   }
 
   const formData = new FormData();
-  formData.append('file', file.file);
+  formData.append('file', originalFile);
 
   uploader(formData, file, null)
       .then(res => {
-        file.onSuccess(res, file.file);
-      }).catch(err => {
-    if (err.response && err.response.status === 401) {
-      waitingList.value = [];
-      fileList.value = [];
-      alert('认证状态错误！'); // 使用 alert 代替 this.$message
-      window.location.href = '/login'; // 使用 window.location.href 代替 this.$router.push
-    } else {
-      file.onError(err, file.file);
-    }
-  }).finally(() => {
-    if (uploadingCount.value + waitingCount.value === 0) {
-      uploading.value = false;
-    }
-  });
+        handleSuccess(res, file);
+        // file.onSuccess(res, file);
+        console.log('上传成功处理完毕');
+
+      })
+      .catch(err => {
+        if (err.response && err.response.status === 401) {
+          waitingList.value = [];
+
+          //todo 待优化, 重新认证后仍保留之前的图片预览列表
+          imgPreviewList.value.slice(0, imgPreviewList.value.length)
+          //fileList.value = [];
+          alert('认证状态错误！');
+          window.location.href = '/login';
+        } else {
+          console.log(`进行上传失败的处理: ${JSON.stringify(err, null, 2)}`);
+          handleError(err, file);
+        }
+      })
+      .finally(() => {
+        console.log('进入finally');
+        if (uploadingCount.value + waitingCount.value === 0) {
+          uploading.value = false;
+        }
+      });
 };
 
+
+/**
+ * 上传前检查方法
+ * @param {File} file - 检查的文件
+ * @returns {boolean} 是否允许上传
+ */
 const beforeUpload = (file) => {
   const isLt10M = Math.ceil(file.size / 1024 / 1024) < 10;
   if (!isLt10M) {
     alert('上传文件大小不能超过 10MB!');
+    //文件太大，不允许上传, 但是这里的fileList是一个computed, 无法直接修改, 所以只是设置了status, 但是并没有真正的删除
+    fileList.value.find(item => item.uid === file.uid).status = 'exception';
     return false;
-  } else {
-    uploading.value = true;
-    const fileUrl = URL.createObjectURL(file);
-    fileList.value.push({
-      uid: file.uid,
-      name: file.name,
-      url: fileUrl,
-      status: 'uploading',
-      progress: 0
-    });
-    return true;
   }
 };
+
+
+
+
+/**
+ * 提交上传的方法
+ */
+
+
+const uploadRef = ref()
+
+const submitUpload = () => {
+  console.log('开始上传: ' +  fileList.value);
+
+  uploadFile(fileList.value[0])
+}
+
+
+// const submitUpload = () => {
+//   fileList.value.forEach(/**@type{CombinedFile}  **/file => {
+//     if (file.status === 'done' || file.status === 'success') {
+//       handleCopy(file);
+//     }
+//   });
+// };
 // endregion
 
 
 
 // region 上传结果Hook
+/**
+ * 检查上传进度
+ * @param {DataItem} imgPreview - 图片预览对象
+ * @returns {string} - 上传状态
+ */
 
+fileList.value.forEach((file) => {
+  watch(
+      () => file.status.value,
+      (newValue, oldValue) => {
+        console.log(`文件 ${file.name.value} 的状态变化了: ${oldValue} -> ${newValue}`);
+      },
+
+      {
+        immediate: true,
+        deep: true
+      }
+  );
+});
+
+const checkProgress = (imgPreview) => {
+
+  watch(
+      () => fileList,
+      (newStatus) => {
+        console.log(`检查上传进度: ${newStatus}`);
+
+        if (newStatus) {
+          imgPreview.status = newStatus;
+        }
+      },
+      { immediate: true, deep: true}
+  );
+};
+
+/**
+ * 处理上传进度
+ * @param {Object} event - 上传事件对象
+ */
 const handleProgress = (event) => {
+  /**
+   * @type {UploadingFile | undefined}
+   */
   const target = fileList.value.find(item => item.uid === event.file.uid);
   if (target) {
-    target.progreess = event.percent;
+    target.progress = event.percent;
   }
 };
+
+
+
+/**
+ * 处理上传成功
+ * @param {Object} response - 响应对象
+ * @param {UploadingFile} file - 上传的文件对象
+ */
+
+//删除其中的url
+const imgPreview4Debug = computed(() =>
+{
+  return imgPreviewList.value.map(item => {
+    const {target, ...rest} = item
+    return rest
+  })
+})
+const tmpVar4Debug = ref()
+
 const handleSuccess = (response, file) => {
   try {
     const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const target = fileList.value.find(item => item.uid === file.uid);
-    target.url = rootUrl + response.data[0].src;
-    target.progreess = 100;
-    target.status = 'success';
-    alert(file.name + '上传成功');
 
-    setTimeout(() => {
-      target.status = 'done';
-    }, 3000);
+    for(let i = 0; i < fileList.value.length; i++) {
+      if(fileList.value[i].uid.value === file.uid) {
+        fileList.value[i].url.value = rootUrl + getRespResult(response);
+        fileList.value[i].progress.value = 100;
+        fileList.value[i].status.value = 'success';
+        tmpVar4Debug.value = fileList.value[i];
+        setTimeout(() => {
+          fileList.value[i].status.value = 'done';
+        }, 3000);
+      }
+    }
+
   } catch (error) {
-    alert(file.name + '上传失败');
-    fileList.value.find(item => item.uid === file.uid).status = 'exception';
+    alert(`文件${file.name}上传失败, error: ${error}`);
+
+    for(let i = 0; i < fileList.value.length; i++) {
+      if(fileList.value[i].uid.value === file.uid) {
+        fileList.value[i].status.value = 'exception';
+      }
+    }
   } finally {
+
     if (uploadingCount.value + waitingCount.value === 0) {
       uploading.value = false;
-
     }
     if (waitingList.value.length) {
       const nextFile = waitingList.value.shift();
@@ -150,7 +481,13 @@ const handleSuccess = (response, file) => {
   }
 };
 
+/**
+ * 处理上传错误
+ * @param {Error} err - 错误对象
+ * @param {UploadingFile} file - 上传的文件对象
+ */
 const handleError = (err, file) => {
+  console.log(`上传失败: ${JSON.stringify(err, null, 2)}`);
   alert(file.name + '上传失败');
   fileList.value.find(item => item.uid === file.uid).status = 'exception';
 
@@ -164,41 +501,59 @@ const handleError = (err, file) => {
   }
 };
 
+/**
+ * 处理文件移除
+ * @param {File} file - 被移除的文件对象
+ */
 const handleRemove = (file) => {
-  fileList.value = fileList.value.filter(item => item.uid !== file.uid);
+  console.log(`处理上传文件移除: ${JSON.stringify(file, null, 2)}`);
+  //fileList = fileList.value.filter(item => item.uid !== file.uid);
   alert(file.name + '已删除');
 };
 // endregion
 
+// region 功能性方法: 粘贴上传 & 复制链接 & 整体复制 & 清空列表
 
-// region 功能性方法: 粘贴上传 & 复制链接 & 整体复制  & 清空列表
-const handlePaste = (event) => {
-  if (props.uploadMethod !== 'paste') {
-    return;
-  }
 
-  const items = event.clipboardData.items;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].kind === 'file') {
-      const file = items[i].getAsFile();
-      if (file.type.includes('image') || file.type.includes('video')) {
-        file.uid = Date.now() + i;
-        file.file = file;
-        if (beforeUpload(file)) {
-          uploadFile({
-            file: file,
-            onProgress: handleProgress,
-            onSuccess: handleSuccess,
-            onError: handleError
-          });
-        }
-      } else {
-        alert('粘贴板中的文件不是图片或视频');
-      }
-    }
-  }
-};
 
+
+// region 暂时废弃的粘贴上传功能
+// /**
+//  * 处理粘贴事件，上传文件
+//  * @param {ClipboardEvent} event - 粘贴事件对象
+//  */
+// const handlePaste = (event) => {
+//   if (props.uploadMethod !== 'paste') {
+//     return;
+//   }
+//
+//   const items = event.clipboardData.items;
+//   for (let i = 0; i < items.length; i++) {
+//     if (items[i].kind === 'file') {
+//       const file = (items[i].getAsFile());
+//       if (file.type.includes('image') || file.type.includes('video')) {
+//         file.uid = Date.now() + i;
+//         file.file = file;
+//         if (beforeUpload(file)) {
+//           uploadFile({
+//             file: file,
+//             onProgress: handleProgress,
+//             onSuccess: handleSuccess,
+//             onError: handleError
+//           });
+//         }
+//       } else {
+//         alert('粘贴板中的文件不是图片或视频');
+//       }
+//     }
+//   }
+// };
+// endregion
+
+/**
+ * 复制单个文件链接
+ * @param {File} file - 文件对象
+ */
 const handleCopy = (file) => {
   const status = fileList.value.find(item => item.uid === file.uid).status;
   if (status !== 'done' && status !== 'success') {
@@ -221,13 +576,18 @@ const handleCopy = (file) => {
   alert('复制成功');
 };
 
+/**
+ * 复制所有文件链接
+ */
 const copyAll = () => {
   let urls;
   if (props.selectedUrlForm === 'url') {
     urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
         .map(item => item.url).join('\n');
   } else if (props.selectedUrlForm === 'md') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
+    urls = fileList.value.filter(item => item.status ===
+
+        'done' || item.status === 'success')
         .map(item => `![${item.name}](${item.url})`).join('\n');
   } else if (props.selectedUrlForm === 'html') {
     urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
@@ -240,130 +600,80 @@ const copyAll = () => {
   alert('整体复制成功');
 };
 
+/**
+ * 清空文件列表
+ */
 const clearFileList = () => {
-  fileList.value = [];
+  imgPreviewList.value.splice(0, imgPreviewList.value.length);
   alert('列表已清空');
 };
 // endregion
 
 
 
-// region 图片预览
-const imgPreviewList = ref([])
-let changeTimer = null; // 用于控制事件合并的计时器
-let pendingFiles = []; // 用于存储待处理的文件列表
-
-const handleFileChange = (file, rawFileList) => {
-  // 将文件暂存到 pendingFiles 中
-  pendingFiles.push(file);
-
-  // 如果有计时器在运行，清除它
-  if (changeTimer) {
-    clearTimeout(changeTimer);
-  }
-
-  // 设置一个新的计时器，200ms 后处理所有文件
-  changeTimer = setTimeout(() => {
-    processFiles(pendingFiles);
-    pendingFiles = []; // 清空待处理的文件列表
-  }, 100);
-};
-
-const processFiles = (files) => {
-  // 可以调用之前的 uploadImg 方法进行处理
-  const filesArray = files.map(f => f.raw || f);
-  const filesLikeList = new FileListLike(filesArray);
-  fileReader(filesLikeList, 0);
-};
-
-
-const fileReader = (files, index) => {
-  let reader = new FileReader()
-  reader.readAsDataURL(files[index])
-  reader.onload = (e) => {
-
-    imgPreviewList.value.push(Object.assign(e, {
-      raw: files[index]
-    }))
-    if (++index < files.length) fileReader(files, index)
-  }
-
-}
-
-const deleteImg = (index) => {
-  imgPreviewList.value.splice(index, 1)
-}
-
-
-
-const dialogImageUrl = ref('')
-const dialogImageName = ref('')
-const dialogVisible = ref(false)
-const disabled = ref(false)
-
-const PicPreviewByClick = (fileSrc, fileName) => {
-  dialogImageUrl.value = fileSrc
-  dialogImageName.value = fileName
-  dialogVisible.value = true
-}
-
-const handleDownload = (file) => {
-  //todo
-}
-
-// endregion
-
-// region 提交上传 todo
-// const submitUpload = () => {
-//   alert('提交上传');
-//   imgPreviewList.value.forEach(imgPreview => {
-//     const file = imgPreview.raw
-//     if (beforeUpload(file)) {
-//       console.log(`准备上传文件: ${file.name}`);
-//       uploadFile(fileList.value.find(item => item.uid === file.uid));
-//     }
-//   })
-// };
-// endregion
 </script>
 
-<template>
 
-<div class="min-w-md bg-white rd-md">
-  <div class="px-4 py-6 "
+<template>
+  <div class="px-4 py-6"
        :class="combinedBgColor">
 
 
+    <el-button @click="submitUpload">点击上传</el-button>
+    <p class="bg-slate-600 text-white">fieList is: {{fileList}}</p>
+    <el-divider/>
+    <p class="bg-slate-600 text-white">imgPreviewList is: {{JSON.stringify(imgPreview4Debug)}}</p>
+    <el-divider/>
+    <p class="bg-slate-600 text-white">file4Debug is: {{JSON.stringify(file4Debug)}}</p>
+    <el-divider/>
+
     <div class="max-w-7xl max-md:max-w-lg mx-auto">
-      <div class="flex">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
+        <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
+          <div class="bg-white rounded-md overflow-hidden group">
 
-        <!--        <template v-for="(imgPreview, index) in imgPreviewList" :key="index">-->
-        <!--          <div class="bg-white rounded-md overflow-hidden group">-->
-        <!--            <div class="relative overflow-hidden group">-->
-        <!--              <img :src="imgPreview.target.result" alt=""-->
-        <!--                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"-->
-        <!--                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>-->
-        <!--              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider-->
-        <!--                      absolute top-0 right-0-->
-        <!--                      cursor-pointer bg-[#645B5B]-->
-        <!--                      hover:text-md hover:bg-opacity-60-->
-        <!--                      opacity-0 group-hover:opacity-100-->
-        <!--                      transition-opacity duration-300-->
-        <!--                      focus-within:opacity-100"-->
-        <!--                   @click="deleteImg(index)">-->
-        <!--                <div class="i-material-symbols-delete-sweep-outline-rounded "/>-->
-        <!--              </div>-->
-        <!--            </div>-->
-        <!--          </div>-->
+            <div class="relative overflow-hidden group">
 
-        <!--        </template>-->
+              <img :src="imgPreview.target.result" alt=""
+                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
+                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
+
+<!--              <div v-if="checkProgress(imgPreview) === 'loading'" class="absolute top-0 left-0 w-full h-full flex justify-center items-center">-->
+<!--                <el-progress-->
+<!--                    :type="'circle'"-->
+<!--                    :percentage="imgPreview.loaded / imgPreview.total * 100"-->
+<!--                    :status="imgPreview.status"-->
+<!--                    :text-inside="true"-->
+<!--                    :stroke-width="4"-->
+<!--                    :color="imgPreview.status === 'success' ? '#67C23A' : '#F56C6C'"-->
+<!--                />-->
+<!--              </div>-->
+              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider
+                      absolute top-0 right-0
+                      cursor-pointer bg-[#645B5B]
+                      hover:text-md hover:bg-opacity-60
+                      opacity-0 group-hover:opacity-100
+                      transition-opacity duration-300
+                      focus-within:opacity-100"
+                   @click="deleteImg(index)">
+                <div class="i-material-symbols-delete-sweep-outline-rounded "/>
+              </div>
+            </div>
+          </div>
 
 
-        <div class="w-full"  @paste.native="handlePaste">
+        </template>
+
+
+        <div>
+<!--          暂时废弃的粘贴上传功能-->
+<!--        <div  @paste.native="handlePaste">-->
           <el-upload
+              ref="uploadRef"
               :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
               drag
               multiple
+
               :onSuccess="handleSuccess"
               :on-error="handleError"
               :before-upload="beforeUpload"
@@ -390,94 +700,13 @@ const handleDownload = (file) => {
             </template>
             <img w-full :src="dialogImageUrl" alt="Preview Image" />
           </el-dialog>
-
-
-
         </div>
-
-
 
 
       </div>
 
     </div>
-
   </div>
-  <div class="m-2 p-2 rd-md">
-    <el-card class="" :class="{'upload-list-busy': fileList.length}">
-      <div class="h-[200px]" :class="{'upload-list-busy': fileList.length}">
-        <el-scrollbar>
-          <div class="p-2 bg-slate- flex justify-between items-center">
-            <div class=" flex space-x-sm">
-              <div class="">
-                <span>上传中: {{ uploadingCount }}/{{ maxUploading }}</span>
-              </div>
-              <div class="">
-                <span>上传成功: {{ uploadSuccessCount }}</span>
-              </div>
-              <div class="">
-                <span>上传失败: {{ uploadErrorCount }}</span>
-              </div>
-            </div>
-            <div>
-              <el-button-group>
-
-                <el-tooltip content="整体复制" placement="top">
-                  <el-button type="primary" round @click="copyAll" alt="整体复制">
-                    <el-icon><div class="i-carbon:copy w-16px h-16px" style="color: white;"></div></el-icon>
-                  </el-button>
-                </el-tooltip>
-                <el-tooltip content="清空列表" placement="top">
-                  <el-button type="primary" round @click="clearFileList">
-
-                    <el-icon><div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div></el-icon>
-                  </el-button>
-                </el-tooltip>
-              </el-button-group>
-            </div>
-          </div>
-
-
-
-          <div class="flex justify-between items-center p-[5px] b-1 "
-               v-for="file in imgPreviewList" :key="file.name" :span="8">
-            <img
-
-                class="object-cover shadow-lg"
-                style="width: 10vw; height: 160px;  border-radius: 12px;"
-                :src="file.target.result"
-                @error="file.url = 'https://imgbed.sanyue.site/file/b6a4a65b4edba4377492e.png'"
-            />
-            <div class="">
-              <el-text class="truncated text-white">{{ file.raw.uid }}</el-text>
-              <div class="upload-list-item-url" v-if="file.status==='done'">
-                <el-link :underline="false" :href="file.url" target="_blank">
-                  <el-text class="upload-list-item-url-text" truncated>{{ file.raw.uid }}</el-text>
-                </el-link>
-              </div>
-              <div class="upload-list-item-progress" v-else>
-                <el-progress type="circle" :percentage="50" :status="file.status" :show-text="false"/>
-              </div>
-            </div>
-            <div class="">
-              <el-button type="primary" circle class="" @click="handleCopy(file)">
-                <el-icon><div class="i-carbon:link w-16px h-16px" style="color: white;"></div></el-icon>
-              </el-button>
-              <el-button type="danger" circle class="" @click="handleRemove(file)">
-                <el-icon ><div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div></el-icon>
-              </el-button>
-            </div>
-          </div>
-
-
-        </el-scrollbar>
-      </div>
-    </el-card>
-
-  </div>
-</div>
-
-
 
 
 </template>
@@ -507,32 +736,11 @@ const handleDownload = (file) => {
   mask-size: 100% 100%;
   background-color: currentColor;
   color: inherit;
-  width: 16px;
-  height: 16px;
-  --at-apply: 'font-bold opacity-100 focus-within:opacity-100 w-[2em] h-[2em]';
-}
-
-
-
-.i-material-symbols-content-copy-outline-rounded {
-  --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 24 24' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M9 18q-.825 0-1.412-.587T7 16V4q0-.825.588-1.412T9 2h9q.825 0 1.413.588T20 4v12q0 .825-.587 1.413T18 18zm0-2h9V4H9zm-4 6q-.825 0-1.412-.587T3 20V7q0-.425.288-.712T4 6t.713.288T5 7v13h10q.425 0 .713.288T16 21t-.288.713T15 22zm4-6V4z'/%3E%3C/svg%3E");
-  -webkit-mask: var(--un-icon) no-repeat;
-  mask: var(--un-icon) no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-  background-color: currentColor;
-  color: inherit;
-  width: 0.8em;
-  height: 0.8em;
-
+  width: 1.2em;
+  height: 1.2em;
   --at-apply: 'font-bold opacity-100 focus-within:opacity-100';
 }
 
-
-.center{
-  margin: 0.5rem auto;
-  display: block;
-}
 
 @keyframes breathe {
   0%, 100% {
@@ -544,6 +752,9 @@ const handleDownload = (file) => {
 }
 
 
+.paste-mode :deep(.el-upload) {
+  pointer-events: none;
+}
 
 
 
@@ -579,7 +790,9 @@ const handleDownload = (file) => {
   opacity: 0.8;
   box-shadow: 0 0 10px 5px #409EFF;
 }
-
+.is-uploading :deep(.el-upload-dragger){
+  animation: breathe 3s infinite;
+}
 .el-upload__text {
   font-weight: bold;
   font-size: medium;
@@ -588,4 +801,7 @@ const handleDownload = (file) => {
 
 
 
+
 </style>
+
+

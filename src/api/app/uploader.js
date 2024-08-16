@@ -23,7 +23,6 @@ export function addAPKInfo(data) {
   });
 }
 
-
 export function uploadApk(file,projectId) {
   let formData = new FormData()
   formData.append('apkFile', file)
