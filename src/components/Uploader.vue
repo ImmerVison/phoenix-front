@@ -2,7 +2,142 @@
 // import cookies from 'vue-cookies'
 
 import {uploader} from '~/api/app/uploader.js'
-import {FileListLike} from "~/types/FileLike.js";
+import {ElMessage} from "element-plus";
+
+
+
+
+
+/**
+ * interface UploadFile {
+ *   name: string
+ *   percentage?: number
+ *   status: UploadStatus
+ *   size?: number
+ *   response?: unknown
+ *   uid: number
+ *   url?: string
+ *   raw?: UploadRawFile
+ *   base64?: string
+ * }
+ * @type {Ref<UnwrapRef<*[]>>}
+ */
+// region 图片预览
+const imgPreviewList = ref([])
+let changeTimer = null; // 用于控制事件合并的计时器
+let pendingFiles = []; // 用于存储待处理的文件列表
+
+
+
+
+// 添加文件、上传成功和上传失败时都会被调用,  添加文件状态传递:  uploader组件的on-change -> imgPreviewList -> fileList
+const handleFileChange = (uploadFile, uploadFiles) => {
+  // FileReader是异步的, 直接read会出现file多次添加的情况,  将文件暂存到 pendingFiles 中
+  pendingFiles.push(uploadFile);
+
+  // 如果有计时器在运行，清除它
+  if (changeTimer) {
+    clearTimeout(changeTimer);
+  }
+
+  // 设置一个新的计时器，200ms 后处理所有文件
+  changeTimer = setTimeout(() => {
+    processFiles(pendingFiles);
+    pendingFiles = []; // 清空待处理的文件列表
+  }, 100);
+};
+
+
+const processFiles = (uploadFileArray) => {
+  fileReader(uploadFileArray, 0);
+};
+
+const fileReader = (uploadFileArray, index) => {
+  let reader = new FileReader()
+  reader.readAsDataURL(uploadFileArray[index].raw)
+  reader.onload = (e) => {
+    imgPreviewList.value.push({
+      ...uploadFileArray[index],
+      base64: e.target.result
+    })
+    if (++index < uploadFileArray.length) fileReader(uploadFileArray, index)
+  }
+
+}
+
+
+const deleteImg = (index) => {
+  imgPreviewList.value.splice(index, 1)
+}
+
+
+const dialogImageUrl = ref('')
+const dialogImageName = ref('')
+const dialogVisible = ref(false)
+const disabled = ref(false)
+
+const PicPreviewByClick = (fileSrc, fileName) => {
+
+  dialogImageUrl.value = fileSrc
+  dialogImageName.value = fileName
+  dialogVisible.value = true
+
+}
+
+const handleDownload = (file) => {
+  //todo
+}
+
+// endregion
+
+
+// region 提交上传, 文件从imgPreviewList -> fileList
+
+const canSubmit = () => {
+  return imgPreviewList.value.length > 0
+}
+
+const submitUpload = () => {
+  fileList.value = []
+  imgPreviewList.value.forEach((imgPreview) => {
+    if (beforeUpload(imgPreview)) {
+      // 将imgPreviewList中的文件转移到fileList中, 但是不包含base64
+      fileList.value.push({
+        name: imgPreview.name,
+        percentage: 0,
+        status: 'uploading',
+        size: imgPreview.size,
+        uid: imgPreview.uid,
+        url: '',
+        raw: imgPreview.raw,
+      })
+      //发送请求
+      const formData = new FormData();
+      formData.append('file', imgPreview.raw);
+
+      uploader(formData, imgPreview, null, handleProgress)
+          .then(res => {
+            handleSuccess(res, imgPreview.uid);
+          })
+          .catch(err => {
+              if (err.response && err.response.status === 401) {
+                ElMessage({
+                  message: '请先登录',
+                  type: 'error',
+                });
+              window.location.href = '/login'; // 使用 window.location.href 代替 this.$router.push
+              } else {
+                  handleError(err, imgPreview.uid);
+            }
+          })
+          .finally(() => {
+
+        });
+    }
+  })
+}
+// endregion
+
 
 // region 变量
 
@@ -32,15 +167,13 @@ const combinedBgColor = computed(() => {
 });
 const errorMessage = ref('');
 
-
 const fileList = ref([]);
 
 const uploading = ref(false);
 
-const maxUploading = ref(10);
+const maxUploading = 10;
 
 const waitingList = ref([]);
-
 
 const uploadingCount = computed(() => {
   return fileList.value.filter(item => item.status === 'uploading').length;
@@ -61,122 +194,71 @@ const uploadErrorCount = computed(() => {
 // endregion
 
 
-// region 上传方法
-const uploadFile = (file) => {
-  if (uploadingCount.value > maxUploading.value) {
-    waitingList.value.push(file);
-    fileList.value.find(item => item.uid === file.file.uid).status = 'waiting';
-    return;
-  } else {
-    fileList.value.find(item => item.uid === file.file.uid).status = 'uploading';
-  }
-
-  const formData = new FormData();
-  formData.append('file', file.file);
-
-  uploader(formData, file, null)
-      .then(res => {
-        file.onSuccess(res, file.file);
-      }).catch(err => {
-    if (err.response && err.response.status === 401) {
-      waitingList.value = [];
-      fileList.value = [];
-      alert('认证状态错误！'); // 使用 alert 代替 this.$message
-      window.location.href = '/login'; // 使用 window.location.href 代替 this.$router.push
-    } else {
-      file.onError(err, file.file);
-    }
-  }).finally(() => {
-    if (uploadingCount.value + waitingCount.value === 0) {
-      uploading.value = false;
-    }
-  });
-};
-
-const beforeUpload = (file) => {
-  const isLt10M = Math.ceil(file.size / 1024 / 1024) < 10;
-  if (!isLt10M) {
-    alert('上传文件大小不能超过 10MB!');
-    return false;
-  } else {
-    uploading.value = true;
-    const fileUrl = URL.createObjectURL(file);
-    fileList.value.push({
-      uid: file.uid,
-      name: file.name,
-      url: fileUrl,
-      status: 'uploading',
-      progress: 0
-    });
-    return true;
-  }
-};
-
-//todo
-const submitUpload = () => {
-  fileList.value.forEach(file => {
-    if (file.status === 'done' || file.status === 'success') {
-      handleCopy(file);
-    }
-  });
-};
-// endregion
-
-
-
 // region 上传结果Hook
+const beforeUpload = (uploadFile) => {
 
+  const isLt10M = Math.ceil(uploadFile.size / 1024 / 1024) < 10;
+  if (!isLt10M) {
+    ElMessage({
+      message: '上传文件大小不能超过 10MB!',
+      type: 'warning',
+    });
+    return false;
+  }
+  return true;
+};
 const handleProgress = (event) => {
-  const target = fileList.value.find(item => item.uid === event.file.uid);
+  const target = fileList.value.find(item => item.uid === event.uid);
   if (target) {
     target.progreess = event.percent;
   }
 };
-const handleSuccess = (response, file) => {
+const handleSuccess = (response, uid) => {
   try {
-    const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const target = fileList.value.find(item => item.uid === file.uid);
+    // const rootUrl = `${window.location.protocol}//${window.location.host}`;
+    const rootUrl = 'https://ciallo.link';
+    const target = fileList.value.find(item => item.uid === uid);
     target.url = rootUrl + response.data[0].src;
-    target.progreess = 100;
+    target.percentage = 100;
     target.status = 'success';
-    alert(file.name + '上传成功');
+
+    // 上传成功后，从预览列表中移除
+    const index = imgPreviewList.value.findIndex(item => item.uid === uid);
+    if (index !== -1) {
+      imgPreviewList.value.splice(index, 1);
+    }
+
+
+    ElMessage({
+      message: '上传成功',
+      type: 'success',
+    })
+
+
 
     setTimeout(() => {
       target.status = 'done';
     }, 3000);
   } catch (error) {
-    alert(file.name + '上传失败');
-    fileList.value.find(item => item.uid === file.uid).status = 'exception';
+    ElMessage({
+      message: '上传失败',
+      type: 'error',
+    })
+    // fileList.value.find(item => item.uid === uid).status = 'exception';
   } finally {
-    if (uploadingCount.value + waitingCount.value === 0) {
-      uploading.value = false;
 
-    }
-    if (waitingList.value.length) {
-      const nextFile = waitingList.value.shift();
-      uploadFile(nextFile);
-    }
   }
 };
 
-const handleError = (err, file) => {
-  alert(file.name + '上传失败');
-  fileList.value.find(item => item.uid === file.uid).status = 'exception';
-
-  if (waitingList.value.length) {
-    const nextFile = waitingList.value.shift();
-    uploadFile(nextFile);
-  }
-
-  if (uploadingCount.value + waitingCount.value === 0) {
-    uploading.value = false;
-  }
+const handleError = (err, uid) => {
+  ElMessage({
+    message: '上传失败',
+    type: 'error',
+  })
+  // fileList.value.find(item => item.uid === uid).status = 'exception';
 };
 
-const handleRemove = (file) => {
-  fileList.value = fileList.value.filter(item => item.uid !== file.uid);
-  alert(file.name + '已删除');
-};
+
 // endregion
 
 
@@ -249,87 +331,19 @@ const copyAll = () => {
   alert('整体复制成功');
 };
 
-const clearFileList = () => {
-  fileList.value = [];
-  alert('列表已清空');
-};
 // endregion
 
 
-
-// region 图片预览
-const imgPreviewList = ref([])
-let changeTimer = null; // 用于控制事件合并的计时器
-let pendingFiles = []; // 用于存储待处理的文件列表
-
-const handleFileChange = (file, rawFileList) => {
-  // 将文件暂存到 pendingFiles 中
-  pendingFiles.push(file);
-
-  // 如果有计时器在运行，清除它
-  if (changeTimer) {
-    clearTimeout(changeTimer);
-  }
-
-  // 设置一个新的计时器，200ms 后处理所有文件
-  changeTimer = setTimeout(() => {
-    processFiles(pendingFiles);
-    pendingFiles = []; // 清空待处理的文件列表
-  }, 100);
-};
-
-const processFiles = (files) => {
-  // 可以调用之前的 uploadImg 方法进行处理
-  const filesArray = files.map(f => f.raw || f);
-  const filesLikeList = new FileListLike(filesArray);
-  fileReader(filesLikeList, 0);
-};
-
-
-const fileReader = (files, index) => {
-  let reader = new FileReader()
-  reader.readAsDataURL(files[index])
-  reader.onload = (e) => {
-
-    imgPreviewList.value.push(Object.assign(e, {
-      raw: files[index]
-    }))
-    if (++index < files.length) fileReader(files, index)
-  }
-
-}
-
-const deleteImg = (index) => {
-  imgPreviewList.value.splice(index, 1)
-}
-
-
-
-const dialogImageUrl = ref('')
-const dialogImageName = ref('')
-const dialogVisible = ref(false)
-const disabled = ref(false)
-
-const PicPreviewByClick = (fileSrc, fileName) => {
-  dialogImageUrl.value = fileSrc
-  dialogImageName.value = fileName
-  dialogVisible.value = true
-}
-
-const handleDownload = (file) => {
-  //todo
-}
-
-// endregion
-
-
+defineExpose({
+  submitUpload,
+  canSubmit
+})
 </script>
 
 <template>
 
-  <div>
-    <el-button class="center">提交</el-button>
-  </div>
+
+
   <div class="px-4 py-6"
        :class="combinedBgColor">
 
@@ -339,8 +353,9 @@ const handleDownload = (file) => {
         <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
           <div class="bg-white rounded-md overflow-hidden group">
             <div class="relative overflow-hidden group">
-              <img :src="imgPreview.target.result" alt=""
-                    @click="PicPreviewByClick(imgPreview.target.result, imgPreview.raw.name)"
+              <img :src="imgPreview.base64" alt=""
+                   loading="lazy"
+                   @click="PicPreviewByClick(imgPreview.base64, imgPreview.name)"
                    class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
               <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider
                       absolute top-0 right-0
@@ -358,20 +373,16 @@ const handleDownload = (file) => {
         </template>
 
 
-        <div  @paste.native="handlePaste">
+        <div @paste.native="handlePaste">
           <el-upload
-              :class="{'is-uploading': uploading, 'upload-card-busy': fileList.length, 'paste-mode': uploadMethod === 'paste'}"
               drag
               multiple
-              :onSuccess="handleSuccess"
-              :on-error="handleError"
-              :before-upload="beforeUpload"
-              :on-progress="handleProgress"
               :file-list="fileList"
+              :auto-upload="false"
               :show-file-list="false"
               accept="image/*, video/*"
               @change="handleFileChange"
-              :auto-upload="false"
+              :before-upload="beforeUpload"
           >
             <el-icon class="el-icon--upload">
               <div class="i-ph-upload-light"></div>
@@ -383,19 +394,12 @@ const handleDownload = (file) => {
 
           </el-upload>
 
-          <el-dialog v-model="dialogVisible">
-            <template #header="{ close, titleId, titleClass }">
-              <h4 :id="titleId" :class="titleClass" class="text-ellipsis">{{dialogImageName}}</h4>
-            </template>
-            <img w-full :src="dialogImageUrl" alt="Preview Image" />
-          </el-dialog>
-
 
 
         </div>
-
-
-
+        <el-dialog v-model="dialogVisible">
+          <img :src="dialogImageUrl" alt="Preview Image" />
+        </el-dialog>
 
       </div>
 
@@ -404,7 +408,7 @@ const handleDownload = (file) => {
   </div>
   <div class="m-2 p-2 rd-md">
     <el-card class="" :class="{'upload-list-busy': fileList.length}">
-      <div class="h-[400px]" :class="{'upload-list-busy': fileList.length}">
+      <div class="h-[360px]" :class="{'upload-list-busy': fileList.length}">
         <el-scrollbar>
           <div class="flex justify-between items-center">
             <div class="flex space-x-sm">
@@ -422,14 +426,18 @@ const handleDownload = (file) => {
               <el-button-group>
 
                 <el-tooltip content="整体复制" placement="top">
-                  <el-button type="primary" round @click="copyAll" alt="整体复制">
-                    <el-icon><div class="i-carbon:copy w-16px h-16px" style="color: white;"></div></el-icon>
+                  <el-button type="primary" round @click="" alt="整体复制">
+                    <el-icon>
+                      <div class="i-carbon:copy w-16px h-16px" style="color: white;"></div>
+                    </el-icon>
                   </el-button>
                 </el-tooltip>
                 <el-tooltip content="清空列表" placement="top">
-                  <el-button type="primary" round @click="clearFileList">
+                  <el-button type="primary" round @click="">
 
-                    <el-icon><div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div></el-icon>
+                    <el-icon>
+                      <div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div>
+                    </el-icon>
                   </el-button>
                 </el-tooltip>
               </el-button-group>
@@ -437,33 +445,51 @@ const handleDownload = (file) => {
           </div>
 
 
+          <div class="flex justify-between items-center mt-2 p-[5px] b-1"
+               v-for="file in fileList" :key="file.uid" :span="8">
 
-          <div class="flex justify-between items-center p-[5px] b-1"
-               v-for="file in imgPreviewList" :key="file.name" :span="8">
-            <img
+          <div>
+            <el-skeleton
+                :loading="!(file.status === 'done')"
+                animated
+            >
+              <template #template>
+                <el-skeleton-item variant="image" style="width: 160px; height: 160px" />
+              </template>
 
-                class="object-cover"
-                style="width: 10vw; height: 160px;  border-radius: 12px;"
-                :src="file.target.result"
-                @error="file.url = 'https://imgbed.sanyue.site/file/b6a4a65b4edba4377492e.png'"
-            />
+              <template #default>
+                <img
+                    loading="lazy"
+                    class="object-cover w-[160px] h-[160px] rounded-lg"
+                    :src="file.url"
+                    alt=""
+                />
+              </template>
+            </el-skeleton>
+
+          </div>
+
             <div class="">
-              <el-text class="truncated text-white">{{ file.raw.uid }}</el-text>
+              <el-text class="text-ellipsis text-white">{{ file.name }}</el-text>
               <div class="upload-list-item-url" v-if="file.status==='done'">
                 <el-link :underline="false" :href="file.url" target="_blank">
-                  <el-text class="upload-list-item-url-text" truncated>{{ file.raw.uid }}</el-text>
+                  <el-text class="upload-list-item-url-text" truncated>{{ file.uid }}</el-text>
                 </el-link>
               </div>
               <div class="upload-list-item-progress" v-else>
-                <el-progress type="circle" :percentage="50" :status="file.status" :show-text="false"/>
+                <el-progress :percentage="file.progreess" :status="file.status" :show-text="false"/>
               </div>
             </div>
-            <div class="">
+            <div class="flex">
               <el-button type="primary" circle class="" @click="handleCopy(file)">
-                <el-icon><div class="i-carbon:link w-16px h-16px" style="color: white;"></div></el-icon>
+                <el-icon>
+                  <div class="i-carbon:link w-16px h-16px" style="color: white;"></div>
+                </el-icon>
               </el-button>
-              <el-button type="danger" circle class="" @click="handleRemove(file)">
-                <el-icon ><div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div></el-icon>
+              <el-button type="danger" circle class="" @click="">
+                <el-icon>
+                  <div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div>
+                </el-icon>
               </el-button>
             </div>
           </div>
@@ -474,8 +500,6 @@ const handleDownload = (file) => {
     </el-card>
 
   </div>
-
-
 
 
 </template>
@@ -511,7 +535,6 @@ const handleDownload = (file) => {
 }
 
 
-
 .i-material-symbols-content-copy-outline-rounded {
   --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 24 24' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M9 18q-.825 0-1.412-.587T7 16V4q0-.825.588-1.412T9 2h9q.825 0 1.413.588T20 4v12q0 .825-.587 1.413T18 18zm0-2h9V4H9zm-4 6q-.825 0-1.412-.587T3 20V7q0-.425.288-.712T4 6t.713.288T5 7v13h10q.425 0 .713.288T16 21t-.288.713T15 22zm4-6V4z'/%3E%3C/svg%3E");
   -webkit-mask: var(--un-icon) no-repeat;
@@ -527,7 +550,7 @@ const handleDownload = (file) => {
 }
 
 
-.center{
+.center {
   margin: 0.5rem auto;
   display: block;
 }
@@ -542,21 +565,19 @@ const handleDownload = (file) => {
 }
 
 
-
-
-
-.is-uploading :deep(.el-upload-dragger){
+.is-uploading :deep(.el-upload-dragger) {
   animation: breathe 3s infinite;
 }
 
 .upload-card-busy :deep(.el-upload-dragger) {
   height: 25vh;
 }
+
 .paste-mode :deep(.el-upload) {
   pointer-events: none;
 }
 
-:deep(.el-upload-dragger)  {
+:deep(.el-upload-dragger) {
   --at-apply: h-60;
   display: flex;
   flex-direction: column;
@@ -569,10 +590,12 @@ const handleDownload = (file) => {
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
+
 :deep(.el-upload-dragger:hover) {
   opacity: 0.8;
   box-shadow: 0 0 10px 5px #409EFF;
 }
+
 :deep(.el-upload-dragger.is-dragover) {
   opacity: 0.8;
   box-shadow: 0 0 10px 5px #409EFF;
@@ -583,7 +606,6 @@ const handleDownload = (file) => {
   font-size: medium;
   user-select: none;
 }
-
 
 
 </style>

@@ -2,7 +2,7 @@
   <div class="min-h-screen flex flex-col dark:bg-#131130">
 
 
-    <div class="h-100vh w-100vw dots fixed pointer-events-none" :class="{ 'dark': isDark }"></div>
+    <div class="h-100vh w-100vw  fixed pointer-events-none" :class="{ 'dark': isDark }"></div>
 
     <main class="main pt-4vh lt-lg:pt-4vh pb-8vh flex-grow-1">
 
@@ -19,27 +19,89 @@
            提示 <span class="inline-block  i-ph-dot-outline-fill"/>标记为必填项，否则无法发布哦
          </p>
        </div>
-
-
       <div class="option-component">
         <div class="option-title">
           <span class="inline-block  i-ph-dot-outline-fill"/>上传图片
         </div>
         <div class="border-2 rd-md wrapper">
-          <Uploader :bg-color="'#F8F9FA'"/>
+          <Uploader ref="uploadRef" :bg-color="'#F8F9FA'"/>
         </div>
       </div>
 
 
+        <div class="option-component">
+          <div class="option-title">
+            <span class="inline-block  i-ph-dot-outline-fill"/>作品分级
+          </div>
+          <div class="p">
+            <el-radio-group v-model="is_nsfw">
+              <el-radio value="false" size="large">NSFW</el-radio>
+              <el-radio value="true" size="large">SFW</el-radio>
+            </el-radio-group>
+          </div>
+
+        </div>
+
+
+        <div class="option-component">
+          <div class="option-title">
+            <span class="inline-block  i-ph-dot-outline-fill"/>作品性质
+          </div>
+          <div class="">
+            <el-radio-group v-model="picAttr">
+              <el-radio value="原创" size="large">原创</el-radio>
+              <el-radio value="转载" size="large">转载</el-radio>
+            </el-radio-group>
+          </div>
+
+        </div>
+
+
+
+        <div class="option-component">
+          <div class="option-title">
+            <span class="inline-block  i-ph-dot-outline-fill"/>作品标签
+          </div>
+
+            <div class="flex gap-2">
+              <el-tag
+                  v-for="tag in dynamicTags"
+                  :key="tag"
+                  closable
+                  :disable-transitions="false"
+                  @close="handleClose(tag)"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-input
+
+                  v-if="inputVisible"
+                  ref="InputRef"
+                  v-model="inputValue"
+                  class="max-w-[10rem]"
+                  size="small"
+                  @keyup.enter="handleInputConfirm"
+                  @blur="handleInputConfirm"
+              >
+                <template #append>{{dynamicTags.length}} / {{maxTagCount}}</template>
+              </el-input>
+                <el-button v-else class="button-new-tag" size="small" @click="showInput">
+                + New Tag
+              </el-button>
+            </div>
+
+        </div>
+
+        <div class="text-center text-sm font-bold">
+          <el-checkbox v-model="agreeContract" size="large" >我同意<a class="text-red" href="http://localhost">《使用协议》</a></el-checkbox>
+        </div>
 
 
         <div class="flex justify-center items-center">
-          <el-button class="ml-3" type="success" @click="">
-            upload to server
+          <el-button class="" size="large"
+                     @click="uploadToServer" :disabled="!canSubmit">
+            <p class="text-lg">上传</p>
           </el-button>
-
-
-
         </div>
 
 
@@ -94,16 +156,65 @@ import {useDark} from "@vueuse/core";
 
 const isDark = useDark();
 
-const selectedUrlForm = ref('url');
-const uploadMethod = ref('drag');
-const showUrlDialog = ref(false);
 
+const uploadRef = ref();
+
+const uploadToServer = () => {
+  uploadRef.value.submitUpload()
+};
+
+const canSubmit = () => {
+  return uploadRef.value.canSubmit()
+};
+
+
+
+const is_nsfw = ref(false);
+const picAttr = ref('');
+
+const rules = ref({
+    required: true,
+    message: 'Please select activity resource',
+    trigger: 'change'
+  })
+
+
+
+const inputValue = ref('')
+const dynamicTags = ref([])
+const inputVisible = ref(false)
+const InputRef = ref()
+const maxTagCount = ref(24)
+
+const handleClose = (tag) => {
+  dynamicTags.value.splice(dynamicTags.value.indexOf(tag), 1)
+}
+
+const showInput = () => {
+  inputVisible.value = true
+  nextTick(() => {
+    InputRef.value.input.focus()
+  })
+}
+
+const handleInputConfirm = () => {
+  if(dynamicTags.value.length >= maxTagCount.value) {
+    return
+  }
+  if (inputValue.value) {
+    dynamicTags.value.push(inputValue.value)
+  }
+  inputVisible.value = false
+  inputValue.value = ''
+}
+
+
+const agreeContract = ref(false);
 
 </script>
 
 <style scoped>
 .main {
-  /* prettier-ignore */
   --at-apply: 'mx-auto mx-w-[68vw] lg:w-4xl md:w-[46rem] lt-md:mx-w-[90vw] lt-md:w-[90vw]';
 }
 

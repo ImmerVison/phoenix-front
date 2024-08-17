@@ -1,6 +1,6 @@
 import request from "~/api/requests.js";
 
-export function uploader(formData, file, cookies) {
+export function uploader(formData, uploadFile, cookies, onProgress) {
   return request({
     url: `/api/upload`,
     method: 'post',
@@ -10,7 +10,7 @@ export function uploader(formData, file, cookies) {
     },
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-      file.onProgress({ percent: percentCompleted, file: file.file });
+      onProgress({ percent: percentCompleted, uid: uploadFile.uid });
     }
   });
 }
