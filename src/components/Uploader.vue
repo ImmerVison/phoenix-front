@@ -83,7 +83,7 @@ const deleteImg = (index) => {
 const dialogImageUrl = ref('')
 const dialogImageName = ref('')
 const dialogVisible = ref(false)
-const disabled = ref(false)
+
 
 const PicPreviewByClick = (fileSrc, fileName) => {
 
@@ -522,6 +522,8 @@ defineExpose({
   border: none;
 }
 
+
+
 .i-material-symbols-delete-sweep-outline-rounded {
   --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 24 24' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M5 19q-.825 0-1.412-.587T3 17V8q-.425 0-.712-.288T2 7t.288-.712T3 6h3v-.5q0-.425.288-.712T7 4.5h2q.425 0 .713.288T10 5.5V6h3q.425 0 .713.288T14 7t-.288.713T13 8v9q0 .825-.587 1.413T11 19zm11-1q-.425 0-.712-.288T15 17t.288-.712T16 16h2q.425 0 .713.288T19 17t-.288.713T18 18zm0-4q-.425 0-.712-.288T15 13t.288-.712T16 12h4q.425 0 .713.288T21 13t-.288.713T20 14zm0-4q-.425 0-.712-.288T15 9t.288-.712T16 8h5q.425 0 .713.288T22 9t-.288.713T21 10zM5 8v9h6V8z'/%3E%3C/svg%3E");
   -webkit-mask: var(--un-icon) no-repeat;
@@ -534,6 +536,8 @@ defineExpose({
   height: 16px;
   --at-apply: 'font-bold opacity-100 focus-within:opacity-100 w-[2em] h-[2em]';
 }
+
+
 
 
 .ep--warning-filled {
@@ -560,6 +564,9 @@ defineExpose({
 
   --at-apply: 'font-bold opacity-100 focus-within:opacity-100';
 }
+
+
+
 
 .errorMask {
   background: radial-gradient(rgba(0, 0, 0, 0) 0%, rgba(196, 51, 51, 0.5) 100%), radial-gradient(rgba(0, 0, 0, 0) 33%, rgba(0, 0, 0, 0.3) 166%);

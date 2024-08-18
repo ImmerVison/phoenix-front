@@ -10,8 +10,7 @@
         图片上传
       </h1>
       <div class="card rd-md mt-4 flex-col justify-center gap-8 space-y-lg">
-
-       <div>
+        <div>
          <h1 class="text-2xl">
            发布图集
          </h1>
@@ -19,7 +18,8 @@
            提示 <span class="inline-block  i-ph-dot-outline-fill"/>标记为必填项，否则无法发布哦
          </p>
        </div>
-      <div class="option-component">
+
+       <div class="option-component">
         <div class="option-title flex justify-between">
           <div class="">
 
@@ -122,8 +122,9 @@
 
         <div class="flex justify-center items-center">
           <el-button class="" size="large"
-                     @click="uploadToServer" :disabled="!canSubmit">
+                     @click="uploadToServer" :disabled="isDisabled">
             <p class="text-lg">上传</p>
+            <p>{{canSubmit}}</p>
           </el-button>
         </div>
 
@@ -186,9 +187,6 @@ const uploadToServer = () => {
   uploadRef.value.submitUpload()
 };
 
-const canSubmit = () => {
-  return uploadRef.value.canSubmit()
-};
 
 const copyAll = () => {
   uploadRef.value.copyAll()
@@ -240,6 +238,29 @@ const handleInputConfirm = () => {
 
 
 const agreeContract = ref(false);
+
+
+
+const validate = () => {
+  if (is_nsfw.value === '') {
+    return false
+  }
+  if (picAttr.value === '') {
+    return false
+  }
+  if (dynamicTags.value.length === 0) {
+    return false
+  }
+  if (!agreeContract.value) {
+    return false
+  }
+  return true
+}
+
+const isDisabled = computed(() => {
+  return !validate() || !uploadRef.value.canSubmit()
+})
+
 
 </script>
 
