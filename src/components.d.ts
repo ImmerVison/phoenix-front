@@ -27,8 +27,10 @@ declare module 'vue' {
     ElText: typeof import('element-plus/es')['ElText']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    NoImage: typeof import('./components/icons/NoImage.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Uploader: typeof import('./components/Uploader.vue')['default']
+    Warn: typeof import('./components/icons/Warn.vue')['default']
   }
 }

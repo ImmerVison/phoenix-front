@@ -3,11 +3,6 @@
 
 import {uploader} from '~/api/app/uploader.js'
 import {ElMessage} from "element-plus";
-
-
-
-
-
 /**
  * interface UploadFile {
  *   name: string
@@ -27,11 +22,25 @@ const imgPreviewList = ref([])
 let changeTimer = null; // 用于控制事件合并的计时器
 let pendingFiles = []; // 用于存储待处理的文件列表
 
+// todo 外部化配置
+const copyLinkFormat = () => '.md'
 
 
 
-// 添加文件、上传成功和上传失败时都会被调用,  添加文件状态传递:  uploader组件的on-change -> imgPreviewList -> fileList
+//绑定on-change, 添加文件、上传成功和上传失败时都会被调用,
 const handleFileChange = (uploadFile, uploadFiles) => {
+
+  // imgPreviewList的最大长度为maxUploading
+
+  if (imgPreviewList.value.length + pendingFiles.length >= maxUploading) {
+    ElMessage({
+      message: `最多上传${maxUploading}张图片, 超出的部分将被忽略`,
+      type: 'warning',
+    });
+    return;
+  }
+
+
   // FileReader是异步的, 直接read会出现file多次添加的情况,  将文件暂存到 pendingFiles 中
   pendingFiles.push(uploadFile);
 
@@ -83,34 +92,19 @@ const PicPreviewByClick = (fileSrc, fileName) => {
   dialogVisible.value = true
 
 }
-
-const handleDownload = (file) => {
-  //todo
-}
-
 // endregion
 
 
-// region 提交上传, 文件从imgPreviewList -> fileList
+// region 提交上传,
 
 const canSubmit = () => {
   return imgPreviewList.value.length > 0
 }
 
 const submitUpload = () => {
-  fileList.value = []
   imgPreviewList.value.forEach((imgPreview) => {
     if (beforeUpload(imgPreview)) {
-      // 将imgPreviewList中的文件转移到fileList中, 但是不包含base64
-      fileList.value.push({
-        name: imgPreview.name,
-        percentage: 0,
-        status: 'uploading',
-        size: imgPreview.size,
-        uid: imgPreview.uid,
-        url: '',
-        raw: imgPreview.raw,
-      })
+      imgPreview.status = 'uploading';
       //发送请求
       const formData = new FormData();
       formData.append('file', imgPreview.raw);
@@ -120,19 +114,19 @@ const submitUpload = () => {
             handleSuccess(res, imgPreview.uid);
           })
           .catch(err => {
-              if (err.response && err.response.status === 401) {
-                ElMessage({
-                  message: '请先登录',
-                  type: 'error',
-                });
+            if (err.response && err.response.status === 401) {
+              ElMessage({
+                message: '请先登录',
+                type: 'error',
+              });
               window.location.href = '/login'; // 使用 window.location.href 代替 this.$router.push
-              } else {
-                  handleError(err, imgPreview.uid);
+            } else {
+              handleError(err, imgPreview.uid);
             }
           })
           .finally(() => {
 
-        });
+          });
     }
   })
 }
@@ -140,7 +134,6 @@ const submitUpload = () => {
 
 
 // region 变量
-
 const props = defineProps({
   bgColor: {
     type: String,
@@ -167,7 +160,6 @@ const combinedBgColor = computed(() => {
 });
 const errorMessage = ref('');
 
-const fileList = ref([]);
 
 const uploading = ref(false);
 
@@ -176,7 +168,7 @@ const maxUploading = 10;
 const waitingList = ref([]);
 
 const uploadingCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'uploading').length;
+  return imgPreviewList.value.filter(item => item.status === 'uploading').length;
 });
 
 const waitingCount = computed(() => {
@@ -185,11 +177,11 @@ const waitingCount = computed(() => {
 
 
 const uploadSuccessCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'done' || item.status === 'success').length;
+  return imgPreviewList.value.filter(item => item.status === 'done' || item.status === 'success').length;
 });
 
 const uploadErrorCount = computed(() => {
-  return fileList.value.filter(item => item.status === 'exception').length;
+  return imgPreviewList.value.filter(item => item.status === 'exception').length;
 });
 // endregion
 
@@ -197,65 +189,73 @@ const uploadErrorCount = computed(() => {
 // region 上传结果Hook
 const beforeUpload = (uploadFile) => {
 
+  if (uploadFile.status === 'uploading' || uploadFile.status === 'done' || uploadFile.status === 'success') {
+    ElMessage({
+      message: `${uploadFile.name}正在上传中或已上传成功`,
+      type: 'warning',
+    });
+    return false;
+  }
   const isLt10M = Math.ceil(uploadFile.size / 1024 / 1024) < 10;
   if (!isLt10M) {
     ElMessage({
-      message: '上传文件大小不能超过 10MB!',
+      message: `${uploadFile.name}尺寸过大, 上传文件大小不能超过 10MB!`,
       type: 'warning',
     });
     return false;
   }
   return true;
 };
-const handleProgress = (event) => {
-  const target = fileList.value.find(item => item.uid === event.uid);
-  if (target) {
-    target.progreess = event.percent;
-  }
-};
+
+
 const handleSuccess = (response, uid) => {
   try {
     // const rootUrl = `${window.location.protocol}//${window.location.host}`;
     const rootUrl = 'https://ciallo.link';
-    const target = fileList.value.find(item => item.uid === uid);
+    const target = imgPreviewList.value.find(item => item.uid === uid);
     target.url = rootUrl + response.data[0].src;
     target.percentage = 100;
     target.status = 'success';
 
-    // 上传成功后，从预览列表中移除
+
+    // 上传成功后，预览列表中原图片的url替换为上传成功后的url
     const index = imgPreviewList.value.findIndex(item => item.uid === uid);
     if (index !== -1) {
-      imgPreviewList.value.splice(index, 1);
+      imgPreviewList.value[index].url = target.url;
+    } else {
+      //todo
+      target.status = 'exception';
+      console.error('未找到对应的图片');
     }
-
-
     ElMessage({
       message: '上传成功',
       type: 'success',
     })
 
 
-
     setTimeout(() => {
       target.status = 'done';
-    }, 3000);
+    }, 800);
   } catch (error) {
+
     ElMessage({
-      message: '上传失败',
+      message: `上传失败[${JSON.stringify(response.data)}]`,
       type: 'error',
     })
-    // fileList.value.find(item => item.uid === uid).status = 'exception';
+    const target = imgPreviewList.value.find(item => item.uid === uid);
+    imgPreviewList.value.find(item => item.uid === uid).status = 'exception';
   } finally {
 
   }
 };
 
 const handleError = (err, uid) => {
+  console.log('handleError error:', err);
   ElMessage({
     message: '上传失败',
     type: 'error',
   })
-  // fileList.value.find(item => item.uid === uid).status = 'exception';
+  imgPreviewList.value.find(item => item.uid === uid).status = 'exception';
 };
 
 
@@ -263,85 +263,150 @@ const handleError = (err, uid) => {
 
 
 // region 功能性方法: 粘贴上传 & 复制链接 & 整体复制  & 清空列表
-const handlePaste = (event) => {
-  if (props.uploadMethod !== 'paste') {
-    return;
-  }
+// const handlePaste = (event) => {
+//   if (props.uploadMethod !== 'paste') {
+//     return;
+//   }
+//
+//   const items = event.clipboardData.items;
+//   for (let i = 0; i < items.length; i++) {
+//     if (items[i].kind === 'file') {
+//       const file = items[i].getAsFile();
+//       if (file.type.includes('image') || file.type.includes('video')) {
+//         file.uid = Date.now() + i;
+//         file.file = file;
+//         if (beforeUpload(file)) {
+//           uploadFile({
+//             file: file,
+//             onProgress: handleProgress,
+//             onSuccess: handleSuccess,
+//             onError: handleError
+//           });
+//         }
+//       } else {
+//         alert('粘贴板中的文件不是图片或视频');
+//       }
+//     }
+//   }
+// };
 
-  const items = event.clipboardData.items;
-  for (let i = 0; i < items.length; i++) {
-    if (items[i].kind === 'file') {
-      const file = items[i].getAsFile();
-      if (file.type.includes('image') || file.type.includes('video')) {
-        file.uid = Date.now() + i;
-        file.file = file;
-        if (beforeUpload(file)) {
-          uploadFile({
-            file: file,
-            onProgress: handleProgress,
-            onSuccess: handleSuccess,
-            onError: handleError
-          });
-        }
-      } else {
-        alert('粘贴板中的文件不是图片或视频');
-      }
-    }
-  }
-};
 
-const handleCopy = (file) => {
-  const status = fileList.value.find(item => item.uid === file.uid).status;
+
+
+
+const handleCopy = (imgPreview) => {
+  const status = imgPreview.status;
   if (status !== 'done' && status !== 'success') {
-    alert('文件未上传成功，无法复制链接');
+    ElMessage({
+      message: '图片未上传成功',
+      type: 'warning',
+    });
     return;
   }
 
   let textToCopy;
-  if (props.selectedUrlForm === 'url') {
-    textToCopy = file.url;
-  } else if (props.selectedUrlForm === 'md') {
-    textToCopy = `![${file.name}](${file.url})`;
-  } else if (props.selectedUrlForm === 'html') {
-    textToCopy = `<img src="${file.url}" alt="${file.name}">`;
-  } else {
-    textToCopy = file.url;
+  switch (copyLinkFormat()) {
+    case 'url':
+      textToCopy = imgPreview.url;
+      break;
+    case 'md':
+      textToCopy = `![${imgPreview.name}](${imgPreview.url})`;
+      break;
+    case 'html':
+      textToCopy = `<img src="${imgPreview.url}" alt="${imgPreview.name}">`;
+      break;
+    default:
+      textToCopy = imgPreview.url;
   }
 
   navigator.clipboard.writeText(textToCopy);
-  alert('复制成功');
+
+  ElMessage({
+    message: '复制成功',
+    type: 'success',
+  });
 };
 
 const copyAll = () => {
   let urls;
-  if (props.selectedUrlForm === 'url') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => item.url).join('\n');
-  } else if (props.selectedUrlForm === 'md') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => `![${item.name}](${item.url})`).join('\n');
-  } else if (props.selectedUrlForm === 'html') {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => `<img src="${item.url}" alt="${item.name}">`).join('\n');
-  } else {
-    urls = fileList.value.filter(item => item.status === 'done' || item.status === 'success')
-        .map(item => item.url).join('\n');
+
+  switch (copyLinkFormat()) {
+    case 'url':
+      urls = imgPreviewList.value.filter(item => item.status === 'done' || item.status === 'success')
+          .map(item => item.url).join('\n');
+      break;
+    case 'md':
+      urls = imgPreviewList.value.filter(item => item.status === 'done' || item.status === 'success')
+          .map(item => `![${item.name}](${item.url})`).join('\n');
+      break;
+    case 'html':
+      urls = imgPreviewList.value.filter(item => item.status === 'done' || item.status === 'success')
+          .map(item => `<img src="${item.url}" alt="${item.name}">`).join('\n');
+      break;
+    default:
+      urls = imgPreviewList.value.filter(item => item.status === 'done' || item.status === 'success')
+          .map(item => item.url).join('\n');
   }
+
   navigator.clipboard.writeText(urls);
-  alert('整体复制成功');
+  ElMessage({
+    message: '整体复制成功',
+    type: 'success',
+  });
+};
+
+
+
+const resetOrClearList = () => {
+  // 如果存在上传中的文件，不允许清空列表
+  if (uploadingCount.value > 0) {
+    ElMessage({
+      message: '存在正在上传的文件，请稍后再试',
+      type: 'warning',
+    });
+    return;
+  }
+
+  // 如果存在上传失败的文件, 则清除上传成功的文件,并把上传失败的文件的status设置为ready
+  if (uploadErrorCount.value > 0) {
+    imgPreviewList.value = imgPreviewList.value.filter(item => item.status === 'exception');
+    imgPreviewList.value.forEach(item => {
+      item.status = 'ready';
+    });
+  } else {
+    imgPreviewList.value = [];
+  }
+
+};
+
+
+
+
+// endregion
+
+
+
+// region deprecated
+const handleProgress = (event) => {
+  const target = imgPreviewList.value.find(item => item.uid === event.uid);
+  if (target) {
+    target.progreess = event.percent;
+  }
 };
 
 // endregion
 
 
+
 defineExpose({
   submitUpload,
-  canSubmit
+  canSubmit,
+  copyAll,
+  resetOrClearList
 })
 </script>
 
 <template>
-
 
 
   <div class="px-4 py-6"
@@ -352,22 +417,55 @@ defineExpose({
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-1">
         <template v-for="(imgPreview, index) in imgPreviewList" :key="index">
           <div class="bg-white rounded-md overflow-hidden group">
-            <div class="relative overflow-hidden group">
-              <img :src="imgPreview.base64" alt=""
-                   loading="lazy"
-                   @click="PicPreviewByClick(imgPreview.base64, imgPreview.name)"
-                   class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
-              <div class="px-1 py-1 rounded-md text-white text-sm tracking-wider
+            <el-skeleton
+                :loading="imgPreview.status === 'uploading'"
+                animated
+                class="w-full h-60 "
+            >
+              <template #template>
+                <el-skeleton-item variant="image" style="width: 100%; height: 100%;"/>
+              </template>
+
+              <template #default>
+
+                <div class="relative overflow-hidden group">
+                  <img :src="imgPreview.base64" alt=""
+                       loading="lazy"
+                       @click="PicPreviewByClick(imgPreview.base64, imgPreview.name)"
+                       class="w-full h-60 object-cover group-hover:scale-125 transition-all duration-300"/>
+
+                  <div v-if="imgPreview.status === 'exception'" class="
+                    absolute top-0 left-0 w-100% h-100% box-border
+                    flex justify-center items-center opacity-60 errorMask">
+                    <div class="ep--warning-filled w-32px h-32px" style="color: #da3e3e;"></div>
+                  </div>
+                  <div v-if="imgPreview.status === 'done'"  class="px-1 py-1 rounded-md text-white text-sm tracking-wider
                       absolute top-0 right-0
                       cursor-pointer bg-[#645B5B]
                       hover:text-md hover:bg-opacity-60
                       opacity-0 group-hover:opacity-100
                       transition-opacity duration-300
                       focus-within:opacity-100"
-                   @click="deleteImg(index)">
-                <div class="i-material-symbols-delete-sweep-outline-rounded "/>
-              </div>
-            </div>
+                       @click="handleCopy(imgPreview)">
+                    <div class="i-material-symbols-content-copy-outline-rounded" style="color: white; width: 1.6em; height: 1.6em;"/>
+
+                  </div>
+
+                  <div v-if="imgPreview.status === 'ready'"  class="px-1 py-1 rounded-md text-white text-sm tracking-wider
+                      absolute top-0 right-0
+                      cursor-pointer bg-[#645B5B]
+                      hover:text-md hover:bg-opacity-60
+                      opacity-0 group-hover:opacity-100
+                      transition-opacity duration-300
+                      focus-within:opacity-100"
+                       @click="deleteImg(index)">
+                    <div class="i-material-symbols-delete-sweep-outline-rounded "/>
+                  </div>
+                </div>
+              </template>
+            </el-skeleton>
+
+
           </div>
 
         </template>
@@ -377,12 +475,13 @@ defineExpose({
           <el-upload
               drag
               multiple
-              :file-list="fileList"
+              :file-list="imgPreviewList"
               :auto-upload="false"
               :show-file-list="false"
               accept="image/*, video/*"
               @change="handleFileChange"
               :before-upload="beforeUpload"
+
           >
             <el-icon class="el-icon--upload">
               <div class="i-ph-upload-light"></div>
@@ -395,10 +494,9 @@ defineExpose({
           </el-upload>
 
 
-
         </div>
         <el-dialog v-model="dialogVisible">
-          <img :src="dialogImageUrl" alt="Preview Image" />
+          <img :src="dialogImageUrl" alt="Preview Image"/>
         </el-dialog>
 
       </div>
@@ -406,101 +504,6 @@ defineExpose({
     </div>
 
   </div>
-  <div class="m-2 p-2 rd-md">
-    <el-card class="" :class="{'upload-list-busy': fileList.length}">
-      <div class="h-[360px]" :class="{'upload-list-busy': fileList.length}">
-        <el-scrollbar>
-          <div class="flex justify-between items-center">
-            <div class="flex space-x-sm">
-              <div class="">
-                <span>上传中: {{ uploadingCount }}/{{ maxUploading }}</span>
-              </div>
-              <div class="">
-                <span>上传成功: {{ uploadSuccessCount }}</span>
-              </div>
-              <div class="">
-                <span>上传失败: {{ uploadErrorCount }}</span>
-              </div>
-            </div>
-            <div class="">
-              <el-button-group>
-
-                <el-tooltip content="整体复制" placement="top">
-                  <el-button type="primary" round @click="" alt="整体复制">
-                    <el-icon>
-                      <div class="i-carbon:copy w-16px h-16px" style="color: white;"></div>
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
-                <el-tooltip content="清空列表" placement="top">
-                  <el-button type="primary" round @click="">
-
-                    <el-icon>
-                      <div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div>
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
-              </el-button-group>
-            </div>
-          </div>
-
-
-          <div class="flex justify-between items-center mt-2 p-[5px] b-1"
-               v-for="file in fileList" :key="file.uid" :span="8">
-
-          <div>
-            <el-skeleton
-                :loading="!(file.status === 'done')"
-                animated
-            >
-              <template #template>
-                <el-skeleton-item variant="image" style="width: 160px; height: 160px" />
-              </template>
-
-              <template #default>
-                <img
-                    loading="lazy"
-                    class="object-cover w-[160px] h-[160px] rounded-lg"
-                    :src="file.url"
-                    alt=""
-                />
-              </template>
-            </el-skeleton>
-
-          </div>
-
-            <div class="">
-              <el-text class="text-ellipsis text-white">{{ file.name }}</el-text>
-              <div class="upload-list-item-url" v-if="file.status==='done'">
-                <el-link :underline="false" :href="file.url" target="_blank">
-                  <el-text class="upload-list-item-url-text" truncated>{{ file.uid }}</el-text>
-                </el-link>
-              </div>
-              <div class="upload-list-item-progress" v-else>
-                <el-progress :percentage="file.progreess" :status="file.status" :show-text="false"/>
-              </div>
-            </div>
-            <div class="flex">
-              <el-button type="primary" circle class="" @click="handleCopy(file)">
-                <el-icon>
-                  <div class="i-carbon:link w-16px h-16px" style="color: white;"></div>
-                </el-icon>
-              </el-button>
-              <el-button type="danger" circle class="" @click="">
-                <el-icon>
-                  <div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div>
-                </el-icon>
-              </el-button>
-            </div>
-          </div>
-
-
-        </el-scrollbar>
-      </div>
-    </el-card>
-
-  </div>
-
 
 </template>
 
@@ -517,8 +520,6 @@ defineExpose({
   width: 1.6em;
   height: 1.6em;
   border: none;
-
-
 }
 
 .i-material-symbols-delete-sweep-outline-rounded {
@@ -535,6 +536,17 @@ defineExpose({
 }
 
 
+.ep--warning-filled {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cpath fill='%23df2626' d='M512 64a448 448 0 1 1 0 896a448 448 0 0 1 0-896m0 192a58.43 58.43 0 0 0-58.24 63.744l23.36 256.384a35.072 35.072 0 0 0 69.76 0l23.296-256.384A58.43 58.43 0 0 0 512 256m0 512a51.2 51.2 0 1 0 0-102.4a51.2 51.2 0 0 0 0 102.4'/%3E%3C/svg%3E");
+}
+
+
+
 .i-material-symbols-content-copy-outline-rounded {
   --un-icon: url("data:image/svg+xml;utf8,%3Csvg viewBox='0 0 24 24' width='1.2em' height='1.2em' xmlns='http://www.w3.org/2000/svg' %3E%3Cpath fill='currentColor' d='M9 18q-.825 0-1.412-.587T7 16V4q0-.825.588-1.412T9 2h9q.825 0 1.413.588T20 4v12q0 .825-.587 1.413T18 18zm0-2h9V4H9zm-4 6q-.825 0-1.412-.587T3 20V7q0-.425.288-.712T4 6t.713.288T5 7v13h10q.425 0 .713.288T16 21t-.288.713T15 22zm4-6V4z'/%3E%3C/svg%3E");
   -webkit-mask: var(--un-icon) no-repeat;
@@ -549,6 +561,13 @@ defineExpose({
   --at-apply: 'font-bold opacity-100 focus-within:opacity-100';
 }
 
+.errorMask {
+  background: radial-gradient(rgba(0, 0, 0, 0) 0%, rgba(196, 51, 51, 0.5) 100%), radial-gradient(rgba(0, 0, 0, 0) 33%, rgba(0, 0, 0, 0.3) 166%);
+}
+.mask {
+  background: radial-gradient(rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%),
+  radial-gradient(rgba(0, 0, 0, 0) 33%, rgba(0, 0, 0, 0.3) 166%);
+}
 
 .center {
   margin: 0.5rem auto;
@@ -607,5 +626,20 @@ defineExpose({
   user-select: none;
 }
 
+
+
+. glassBg {
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 3.2rem;
+  background-color: var(rgba(255, 255, 255, .5));
+  position: sticky;
+  top: 0;
+  color: black;
+  backdrop-filter: blur(10px);
+  z-index: 20;
+}
 
 </style>

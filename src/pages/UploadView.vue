@@ -20,8 +20,31 @@
          </p>
        </div>
       <div class="option-component">
-        <div class="option-title">
-          <span class="inline-block  i-ph-dot-outline-fill"/>上传图片
+        <div class="option-title flex justify-between">
+          <div class="">
+
+            <div class="inline-block i-ph-dot-outline-fill"/><span>上传图片</span>
+            </div>
+          <div class="">
+            <el-button-group>
+              <el-tooltip content="复制图片外链" placement="top">
+                <el-button type="primary" round @click="copyAll" alt="复制图片外链">
+                  <el-icon>
+                    <div class="i-carbon:copy w-16px h-16px" style="color: white;"></div>
+                  </el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="重置/清空列表" placement="top">
+                <el-button type="primary" round @click="resetOrClear">
+
+                  <el-icon>
+                    <div class="i-carbon:row-delete w-16px h-16px" style="color: white;"></div>
+                  </el-icon>
+                </el-button>
+              </el-tooltip>
+            </el-button-group>
+          </div>
+
         </div>
         <div class="border-2 rd-md wrapper">
           <Uploader ref="uploadRef" :bg-color="'#F8F9FA'"/>
@@ -167,6 +190,13 @@ const canSubmit = () => {
   return uploadRef.value.canSubmit()
 };
 
+const copyAll = () => {
+  uploadRef.value.copyAll()
+};
+
+const resetOrClear = () => {
+  uploadRef.value.resetOrClearList()
+};
 
 
 const is_nsfw = ref(false);
