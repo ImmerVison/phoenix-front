@@ -635,18 +635,6 @@ defineExpose({
 
 
 
-. glassBg {
-  padding: 0 1rem;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 3.2rem;
-  background-color: var(rgba(255, 255, 255, .5));
-  position: sticky;
-  top: 0;
-  color: black;
-  backdrop-filter: blur(10px);
-  z-index: 20;
-}
+
 
 </style>

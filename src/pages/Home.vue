@@ -1,27 +1,26 @@
 <script setup>
 import {useDark, useEventListener} from "@vueuse/core";
 import {onMounted, reactive, ref, watchEffect} from "vue";
-import Uploader from "~/components/Uploader.vue";
+import Title from "~/components/Title.vue";
+
+const leftWidth = ref(0)
+const listRef = ref(null)
+const panelMinWidth = document.body.clientWidth / 2 > 256 ? 256 : document.body.clientWidth / 2
 
 const isDark = useDark();
-function jumpTo(url) {
-  const a = document.createElement('a');
-  a.href = url;
-  a.target = '_blank';
-  a.click();
+onMounted(() => {
+  const menuOpen = localStorage.getItem('menuOpen')
+  if (menuOpen === '1') {
+    leftWidth.value = panelMinWidth
+  }
+})
+
+
+const togglePanel = () => {
+  console.log(leftWidth.value)
+  leftWidth.value = Math.abs(leftWidth.value - panelMinWidth)
+  localStorage.setItem('menuOpen', leftWidth.value > 0 ? '1' : '0')
 }
-
-
-const selectedUrlForm= ref('url');
-const uploadMethod =  ref('drag');
-const showUrlDialog = ref(false);
-
-
-onMounted(async () => {
-  // await init();
-  //
-  // useEventListener(document, 'keydown', keypressListener);
-});
 
 
 </script>
@@ -31,61 +30,69 @@ onMounted(async () => {
   <div class="min-h-screen flex flex-col dark:bg-#131130">
 
 
-    <div class="h-100vh w-100vw dots fixed pointer-events-none" :class="{ 'dark': isDark }"></div>
-
-    <main class="main pt-4vh lt-lg:pt-4vh pb-8vh flex-grow-1">
-      <h1 class="text-gradient inline-block font-quicksand text-3xl font-700 hover:underline underline-dotted">
-        Vue3 Starter Template
-      </h1>
-      <div class="card rd-md mt-4">
-        <div class="text-center">
-          <h2 class="text-2xl font-700">Start From UnoCss</h2>
-          <p class="text-base mt-2">这是我的启动模板</p>
-        </div>
-      </div>
+    <div class="h-100vh w-100vw relative flex" :class="{ 'dark': isDark }">
 
 
-      <Uploader
-          :selected-url-form="selectedUrlForm"
-          :upload-method="uploadMethod"
-      />
-    </main>
-
-
-    <footer class="pb-4vh select-none flex flex-col items-center">
-      <div class="text-xl c-slate-900 flex items-center">
+      <div class="flex w-full min-h-full">
         <div class="
-        backdrop-blur-2 saturate-120%
-        pa-1 rd-50% mr-2 cursor-pointer simple-btn"
-             @click="isDark = !isDark"><div class="i-material-symbols-sunny-rounded"></div>
+        absolute md:relative bottom-0 top-0 left-0 z-[900] transition-all
+         bg-white overflow-hidden text-black
+         min-h-screen"
+             :style="{
+        width: leftWidth + 'px'
+      }">
+
+          <Navigation/>
+
         </div>
-        <div class="
-        backdrop-blur-2 saturate-120%
-        pa-1 rd-50% mr-2 cursor-pointer simple-btn"
-             @click="jumpTo('https://github.com')">
-          <div class="i-mdi-github"></div>
+        <div v-if="leftWidth" class="md:hidden absolute left-0 right-0 top-0 bottom-0 z-[100]
+         bg-neutral-600 bg-opacity-70
+          " @click="togglePanel"></div>
+        <div class="flex-1 relative max-h-screen overflow-hidden">
+          <div class="flex sticky top-0 left-0 right-0 z-10 place-content-between p-4 gap-2
+          bg- shadow-sm
+          backdrop-filter backdrop-blur-lg
+          is-transparent
+          bg-[rgba(255, 255, 255, .5)] dark:bg-[(rgba(0, 0, 0, .5))]
+">
+            <div class="flex gap-2 items-center">
+              <div @click="togglePanel" class="i-carbon:open-panel-left w-32px h-32px"></div>
+              <div></div>
+            </div>
+            <div class="flex is-justify-space-around items-center text-xl">
+              <div class="i-carbon:search w-32px h-32px"></div>
+              <div class="i-carbon:settings w-32px h-32px"></div>
+              <div class="i-carbon:settings w-32px h-32px"></div>
+              <div class="i-carbon:settings w-32px h-32px"></div>
+            </div>
+
+          </div>
+
+          <div class="
+          flex justify-center pt-8 overflow-y-auto max-h-full">
+
+
+            <!--            <div class="w-full max-w-[800px]">-->
+            <!--              <div>-->
+
+            <!--              </div>-->
+            <!--              <main class="flex-1 p-3">-->
+            <!--                <div class="search-box">-->
+
+            <!--                </div>-->
+            <!--                <div ref="listRef">-->
+
+            <!--                </div>-->
+            <!--                <div class="h-[64px]"></div>-->
+            <!--              </main>-->
+            <!--            </div>-->
+
+          </div>
         </div>
       </div>
 
-      <div class="text-xs c-gray-600 dark:c-gray-200 mt-3">
-        <div class="text-center">
-          <span>&copy; {{ new Date().getFullYear() }}</span>
-          <span class="
-            ml-2 inline-flex c-gray-600 items-center cursor-pointer b-1 b-solid b-transparent
-            hover:b-b-gray-600
-            dark:c-gray-200 dark:hover:b-b-gray-200
-          " @click="jumpTo('https://www.pixiv.net')">
-            <span>996</span>
-            <i class="i-mdi-open-in-new ml-1"></i>
-          </span>
-        </div>
-        <div class="text-gray-400 mt-1">Last updated at {{ new Date().toDateString() }}
-        </div>
-      </div>
-    </footer>
-
+    </div>
   </div>
-
 
 </template>
 
@@ -94,12 +101,11 @@ onMounted(async () => {
   /* prettier-ignore */
   --at-apply: 'mx-auto mx-w-[68vw] lg:w-4xl md:w-[46rem] lt-md:mx-w-[90vw] lt-md:w-[90vw]';
 }
+
 .simple-btn {
   --at-apply: 'bg-slate-400 bg-op-20 hover:bg-op-50 active:op-100 ';
   --at-apply: 'dark:c-white dark:hover:bg-white-800 dark:active:bg-white-700';
 }
-
-
 
 
 .dots {
@@ -121,7 +127,8 @@ onMounted(async () => {
 
 .text-link {
   /* prettier-ignore */
-  --at-apply: text-sky-700 hover:text-sky-500;
+  --at-apply: text-sky-700
+  hover: text-sky-500;
 }
 
 .text-link-active {
@@ -152,8 +159,6 @@ onMounted(async () => {
   width: 1.2em;
   height: 1.2em;
 }
-
-
 
 
 </style>
