@@ -48,6 +48,8 @@ const togglePanel = () => {
         <div v-if="leftWidth" class="md:hidden absolute left-0 right-0 top-0 bottom-0 z-[100]
          bg-neutral-600 bg-opacity-70
           " @click="togglePanel"></div>
+
+
         <div class="flex-1 relative max-h-screen overflow-hidden">
           <div class="flex sticky top-0 left-0 right-0 z-10 place-content-between p-4 gap-2
           bg- shadow-sm
@@ -72,6 +74,7 @@ const togglePanel = () => {
           flex justify-center pt-8 overflow-y-auto max-h-full">
 
 
+            <Canvas/>
             <!--            <div class="w-full max-w-[800px]">-->
             <!--              <div>-->
 

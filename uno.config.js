@@ -63,6 +63,8 @@ export default defineConfig({
   shortcuts: {
 
     'card': 'border-rd-30 bg-#FFFFFF shadow-[0px_6px_20px_0px_rgba(204,204,204,0.3)] w-100% mb-4vw p-2rem',
+    'btn':  'px-4 py-1 rounded inline-block bg-teal-600 text-white cursor-pointer hover:bg-teal-700 disabled:cursor-default disabled:bg-gray-600 disabled:opacity-50',
+    'icon-btn': 'inline-block cursor-pointer select-none opacity-75 transition duration-200 ease-in-out hover:opacity-100 hover:text-teal-600',
     'border-base': 'border-gray/40 dark:border-gray/40',
     'text-base-50': 'text-neutral-50 dark:text-light-50',
     'text-base-100': 'text-neutral-100 dark:text-light-100',

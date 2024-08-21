@@ -1,5 +1,26 @@
 <script setup>
 
+import NavButton from "~/components/NavButton.vue";
+
+const obj = ref({
+  exif: {
+    make: 'Canon',
+    model: 'Canon EOS 5D Mark IV',
+    bits: 14,
+    data_time: '2021-09-01 12:00:00',
+    exposure_time: '1/1000',
+    f_number: 'f/2.8',
+    exposure_program: 'Manual',
+    iso_speed_rating: 100,
+    focal_length: '50mm',
+    lens_specification: 'EF50mm f/1.8 STM',
+    lens_model: 'EF50mm f/1.8 STM',
+    exposure_mode: 'Manual',
+    cfa_pattern: 'RGGB',
+    color_space: 'sRGB',
+    white_balance: 'Auto',
+  }
+})
 </script>
 
 <template>
@@ -24,7 +45,7 @@
               data-[focus-visible=true]:outline-offset-2
               sm:hidden
               dark:text-white select-none">
-              <div class="i-carbon:menu:border-none w-24px h-24px color-black-200"></div>
+            <div class="i-carbon:menu:border-none w-24px h-24px color-black-200"></div>
           </el-button>
         </div>
         <ul class="h-full flex-row flex-nowrap items-center data-[justify=start]:justify-start data-[justify=start]:flex-grow data-[justify=start]:basis-0 data-[justify=center]:justify-center data-[justify=end]:justify-end data-[justify=end]:flex-grow data-[justify=end]:basis-0 hidden sm:flex gap-4 select-none"
@@ -55,13 +76,7 @@
             </a></li>
           <li class="font-medium whitespace-nowrap box-border list-none data-[active=true]:font-semibold flex h-full items-center">
             <button>
-              <svg aria-hidden="true" focusable="false" height="22" role="presentation" viewBox="0 0 24 24" width="22">
-                <g fill="currentColor">
-                  <path d="M19 12a7 7 0 11-7-7 7 7 0 017 7z"></path>
-                  <path
-                      d="M12 22.96a.969.969 0 01-1-.96v-.08a1 1 0 012 0 1.038 1.038 0 01-1 1.04zm7.14-2.82a1.024 1.024 0 01-.71-.29l-.13-.13a1 1 0 011.41-1.41l.13.13a1 1 0 010 1.41.984.984 0 01-.7.29zm-14.28 0a1.024 1.024 0 01-.71-.29 1 1 0 010-1.41l.13-.13a1 1 0 011.41 1.41l-.13.13a1 1 0 01-.7.29zM22 13h-.08a1 1 0 010-2 1.038 1.038 0 011.04 1 .969.969 0 01-.96 1zM2.08 13H2a1 1 0 010-2 1.038 1.038 0 011.04 1 .969.969 0 01-.96 1zm16.93-7.01a1.024 1.024 0 01-.71-.29 1 1 0 010-1.41l.13-.13a1 1 0 011.41 1.41l-.13.13a.984.984 0 01-.7.29zm-14.02 0a1.024 1.024 0 01-.71-.29l-.13-.14a1 1 0 011.41-1.41l.13.13a1 1 0 010 1.41.97.97 0 01-.7.3zM12 3.04a.969.969 0 01-1-.96V2a1 1 0 012 0 1.038 1.038 0 01-1 1.04z"></path>
-                </g>
-              </svg>
+              <div class="i-carbon:search w-24px h-24px color-black-200"></div>
             </button>
           </li>
         </ul>
@@ -75,7 +90,10 @@
         <div class="relative shadow-black/5 shadow-none rounded-large" style="max-width:200px"><img
             src="https://besscroft.com/uploads/avatar.jpg"
             class="relative z-10 opacity-0 shadow-black/5 data-[loaded=true]:opacity-100 shadow-none transition-transform-opacity motion-reduce:transition-none !duration-300 rounded-large object-cover"
-            alt="Woman listing to music" height="200" width="200" data-loaded="true"></div>
+            alt="Woman listing to music" height="200" width="200" data-loaded="true">
+
+        </div>
+
         <div
             class="p-3 h-auto flex items-center color-inherit subpixel-antialiased
             bg-op-10 backdrop-blur backdrop-saturate-150 justify-between
@@ -83,6 +101,7 @@
               border-1 overflow-hidden py-1 absolute before:rounded-xl
                rounded-lg bottom-1 w-[calc(100%_-_8px)] shadow-small ml-1 z-10">
           <p class="text-tiny text-white/80">想联系我？</p>
+
           <button
               class="z-0 group relative inline-flex items-center justify-center
               box-border appearance-none select-none whitespace-nowrap
@@ -96,16 +115,23 @@
                 motion-reduce:transition-none
                 data-[hover=true]:opacity-100
                 text-xs text-white bg-black/20"
-              >发邮件
+          >发邮件
           </button>
         </div>
       </div>
+
 
       <div
           class="relative flex w-full p-3 flex-auto flex-col place-content-inherit align-items-inherit h-auto break-words text-left overflow-y-auto subpixel-antialiased">
 
         <p>我们的批评者是我们的朋友，因为他们指出我们的缺点。—— 本杰明·富兰克林</p></div>
+
+
     </main>
+    <Header/>
+
+    <NavButton/>
+    <Ex :exif="obj.exif" />
   </div>
 </template>
 
