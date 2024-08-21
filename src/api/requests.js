@@ -3,7 +3,7 @@ import {ElMessage} from "element-plus";
 
 
 const isDev = () => import.meta.env.MODE === 'development';
-let baseURL = () => isDev() ? (import.meta.env.VITE_API_BASE_URL ?? 'https://ciallo.link') : `${location.origin}`;
+// let baseURL = () => isDev() ? (import.meta.env.VITE_API_BASE_URL ?? 'https://ciallo.link') : `${location.origin}`;
 
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 //创建axios实例

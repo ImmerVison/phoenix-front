@@ -31,17 +31,23 @@ export default defineConfig(({ mode }) => {
             }
         },
 
-        server: {
-            hmr: true,
-            open: true,
-            proxy: {
-                "/api": {
-                    target: "https://ciallo.link",
-                    changeOrigin: true,
-                    rewrite: (path) => path.replace(/^\/api/, ""),
-                },
-            },
-        },
+        // server: {
+        //     hmr: true,
+        //     open: true,
+        //     proxy: {
+        //         "/api": {
+        //             target: "https://ciallo.link",
+        //             changeOrigin: true,
+        //             rewrite: (path) => path.replace(/^\/api/, ""),
+        //         },
+        //
+        //         "/setu": {
+        //             target: "https://api.lolicon.app/setu",
+        //             changeOrigin: true,
+        //             rewrite: (path) => path.replace(/^\/setu/, ""),
+        //         },
+        //     },
+        // },
 
         plugins: [
             vue(),

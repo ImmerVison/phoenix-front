@@ -2,7 +2,7 @@ import 'uno.css';
 import './styles/preset.css'
 import '@unocss/reset/tailwind.css';
 
-
+import 'vue-waterfall-plugin-next/dist/style.css'
 
 import { createApp } from 'vue';
 import './style.css';

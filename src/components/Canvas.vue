@@ -10,7 +10,7 @@ const props = defineProps({
         type: Number
       },
       dataList: {
-        type: []
+        type: Array
       }
 })
 

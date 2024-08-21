@@ -18,10 +18,10 @@ declare module 'vue' {
     ElDescriptions: typeof import('element-plus/es')['ElDescriptions']
     ElDescriptionsItem: typeof import('element-plus/es')['ElDescriptionsItem']
     ElDialog: typeof import('element-plus/es')['ElDialog']
+    ElEmpty: typeof import('element-plus/es')['ElEmpty']
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElImage: typeof import('element-plus/es')['ElImage']
     ElInput: typeof import('element-plus/es')['ElInput']
-    ElMenu: typeof import('element-plus/es')['ElMenu']
     ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
@@ -44,5 +44,6 @@ declare module 'vue' {
     Title: typeof import('./components/Title.vue')['default']
     Uploader: typeof import('./components/Uploader.vue')['default']
     Warn: typeof import('./components/icons/Warn.vue')['default']
+    Waterfall: typeof import('./components/Waterfall.vue')['default']
   }
 }
