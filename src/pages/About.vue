@@ -3,8 +3,9 @@
 import NavButton from "~/components/NavButton.vue";
 import photosList from '~/constants/photos.json'
 import {useUserStore} from "~/store/index.js";
-import {getSetu} from "~/api/app/getSetu.js";
+import {getSetu, getWaifu} from "~/api/app/getSetu.js";
 import {onBeforeRouteUpdate, useRoute, useRouter} from "vue-router";
+import Upload from "~/components/Upload.vue";
 //
 // const toast = useToast()
 const user = useUserStore()
@@ -64,24 +65,42 @@ const dataHandle = async () => {
   // endregion
 
 
-  const res = await getSetu(
-      {
-        "size": [
-          "original"
-        ],
-        "num": pageInfo.pageSize
+  // const res = await getSetu(
+  //     {
+  //       "size": [
+  //         "original"
+  //       ],
+  //       "num": pageInfo.pageSize
+  //     })
+  const res = await getWaifu({
+        // "size": [
+        //   "original"
+        // ],
+        // "num": pageInfo.pageSize
       })
       .then(res => {
+
+             if(res?.data.images){
+               // 为数组中的每个元素添加一个唯一的id
+                res?.data.images.forEach((item, index) => {
+                  item.id = item['image_id']
+                })
+             }
+
             if (dataList.value.length === 0) {
-              dataList.value = res?.data.data
+              // dataList.value = res?.data.data
+              dataList.value = res?.data.images
             } else {
-              dataList.value = dataList.value.concat(res?.data.data)
+              //dataList.value = dataList.value.concat(res?.data.data)
+              dataList.value = dataList.value.concat(res?.data.images)
             }
-            pageInfo.total = res?.data.data.size()
+            // pageInfo.total = res?.data.data.size()
+            pageInfo.total = res?.data.images.length
             pageInfo.totalPage += 1
 
       })
       .catch(e => {
+        console.log(`error: ${e}`)
         //   toast.add({ title: '加载失败！', timeout: 2000, color: 'red' })
       })
       .finally(() => {
@@ -102,26 +121,26 @@ const validateRoute = async (routePath) => {
 }
 
 
-// 初次挂载时进行验证
-onMounted(async () => {
-  isValidRoute.value = await validateRoute(route.path)
-  if (!isValidRoute.value) {
-    // 如果路由无效，执行相应操作，比如重定向
-    await router.replace('/not-found')
-  }
-})
-
-
-// 路由变化时进行验证
-onBeforeRouteUpdate(async (to, from, next) => {
-  isValidRoute.value = await validateRoute(to.path)
-  if (isValidRoute.value) {
-    next()
-  } else {
-    // 路由无效，阻止导航或重定向
-    next('/not-found')
-  }
-})
+// // 初次挂载时进行验证
+// onMounted(async () => {
+//   isValidRoute.value = await validateRoute(route.path)
+//   if (!isValidRoute.value) {
+//     // 如果路由无效，执行相应操作，比如重定向
+//     await router.replace('/not-found')
+//   }
+// })
+//
+//
+// // 路由变化时进行验证
+// onBeforeRouteUpdate(async (to, from, next) => {
+//   isValidRoute.value = await validateRoute(to.path)
+//   if (isValidRoute.value) {
+//     next()
+//   } else {
+//     // 路由无效，阻止导航或重定向
+//     next('/not-found')
+//   }
+// })
 
 onUnmounted(() => {
   dataList.value = []
@@ -261,6 +280,8 @@ const obj = ref({
 
     <NavButton/>
     <Ex :exif="obj.exif"/>
+
+
 
 
   </div>
