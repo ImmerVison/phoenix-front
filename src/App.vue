@@ -35,10 +35,6 @@ const showLoading = ref(true);
   /* prettier-ignore */
   --at-apply: 'mx-auto mx-w-[68vw] lg:w-4xl md:w-[46rem] lt-md:mx-w-[90vw] lt-md:w-[90vw]';
 }
-.simple-btn {
-  --at-apply: 'bg-slate-400 bg-op-20 hover:bg-op-50 active:op-100 ';
-  --at-apply: 'dark:c-white dark:hover:bg-white-800 dark:active:bg-white-700';
-}
 
 
 

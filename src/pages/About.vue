@@ -173,6 +173,7 @@ const obj = ref({
 
 <template>
   <div h-screen bg-white>
+    <Header/>
     <nav
         class="flex z-40 w-full h-auto items-center justify-center
          sticky top-0 inset-x-0
@@ -276,12 +277,11 @@ const obj = ref({
 
 
     </main>
+
     <Waterfall :dataList="dataList" :loading="loading" :handleButton="handleButton" @dataHandle="dataHandle"/>
 
     <NavButton/>
-    <Ex :exif="obj.exif"/>
-
-
+<!--    <Ex :exif="obj.exif"/>-->
 
 
   </div>

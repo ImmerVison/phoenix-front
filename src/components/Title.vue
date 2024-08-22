@@ -101,13 +101,13 @@ h2 a svg {
 }
 
 
-. glassBg {
+.glassBg {
   padding: 0 1rem;
   display: flex;
   align-items: center;
   width: 100%;
   height: 3.2rem;
-  background-color: var(rgba(255, 255, 255, .5));
+  background-color: rgba(255, 255, 255, 0.5);
   position: sticky;
   top: 0;
   color: black;

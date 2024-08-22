@@ -2,6 +2,7 @@
 import photosList from '~/constants/photos.json'
 import {useUserStore} from "~/store/index.js";
 import {ElMessage} from "element-plus";
+import {uploader} from "~/api/app/uploader.js";
 
 const user = useUserStore()
 const fileUrl = ref('')
@@ -45,8 +46,7 @@ const storageOptions = ref([
     value: 'alist',
   },
 ])
-const mountOptions = ref<Array<Object>>([
-])
+const mountOptions = ref([])
 const imgTypeOptions = ref([
   {
     label: '首页精选',
@@ -56,51 +56,72 @@ const imgTypeOptions = ref([
 
 /** 自定义上传请求 */
 async function onRequestUpload(option) {
-  try {
-    const file = option.file
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('storage', storage.value || '')
-    formData.append('type', imgData.type || '')
-    formData.append('mountPath', imgData.mountPath || '')
-    const res = await fetch('/api/uploadFile', {
-      timeout: 60000,
-      method: 'post',
-      headers: {
-        Authorization: `${user.tokenName} ${user.token}`,
-      },
-      body: formData,
-    })
-    if (res?.code === 200) {
-      fileUrl.value = res.data?.url
-      imgData.url = res.data?.url
-      const tags = await ExifReader.load(file)
-      exif.make = tags?.Make?.description
-      exif.model = tags?.Model?.description
-      exif.bits = tags?.['Bits Per Sample']?.description
-      exif.data_time = tags?.DateTime?.description
-      exif.exposure_time = tags?.ExposureTime?.description
-      exif.f_number = tags?.FNumber?.description
-      exif.exposure_program = tags?.ExposureProgram?.description
-      exif.iso_speed_rating = tags?.ISOSpeedRatings?.description
-      exif.focal_length = tags?.FocalLength?.description
-      exif.lens_specification = tags?.LensSpecification?.description
-      exif.lens_model = tags?.LensModel?.description
-      exif.exposure_mode = tags?.ExposureMode?.description
-      exif.cfa_pattern = tags?.CFAPattern?.description
-      exif.color_space = tags?.ColorSpace?.description
-      exif.white_balance = tags?.WhiteBalance?.description
-      imgData.exif = exif
-    }
-  } catch (e) {
-    console.log(e)
-    if (e?.status === 413) {
-      //toast.add({ title: '上传文件大小超出限制！', timeout: 2000, color: 'red' })
-      option.file.abort()
-    } else {
-      //toast.add({ title: e?.message, timeout: 2000, color: 'red' })
-    }
-  }
+
+  const file = option.file
+  const formData = new FormData()
+  formData.append('file', file)
+  uploader(formData, null, null, null)
+      .then(res => {
+        const rootUrl = 'https://ciallo.link';
+        fileUrl.value = rootUrl + res.data[0].src;
+        imgData.url = fileUrl.value;
+      })
+      .catch(e => {
+        console.log(e)
+        if (e?.status === 413) {
+          //toast.add({ title: '上传文件大小超出限制！', timeout: 2000, color: 'red' })
+          option.file.abort()
+        } else {
+          //toast.add({ title: e?.message, timeout: 2000, color: 'red' })
+        }
+      })
+
+
+  // try {
+  //   const file = option.file
+  //   const formData = new FormData()
+  //   formData.append('file', file)
+  //   formData.append('storage', storage.value || '')
+  //   formData.append('type', imgData.type || '')
+  //   formData.append('mountPath', imgData.mountPath || '')
+  //   const res = await fetch('/api/uploadFile', {
+  //     timeout: 60000,
+  //     method: 'post',
+  //     headers: {
+  //       Authorization: `${user.tokenName} ${user.token}`,
+  //     },
+  //     body: formData,
+  //   })
+  //   if (res?.code === 200) {
+  //     fileUrl.value = res.data?.url
+  //     imgData.url = res.data?.url
+  //     const tags = await ExifReader.load(file)
+  //     exif.make = tags?.Make?.description
+  //     exif.model = tags?.Model?.description
+  //     exif.bits = tags?.['Bits Per Sample']?.description
+  //     exif.data_time = tags?.DateTime?.description
+  //     exif.exposure_time = tags?.ExposureTime?.description
+  //     exif.f_number = tags?.FNumber?.description
+  //     exif.exposure_program = tags?.ExposureProgram?.description
+  //     exif.iso_speed_rating = tags?.ISOSpeedRatings?.description
+  //     exif.focal_length = tags?.FocalLength?.description
+  //     exif.lens_specification = tags?.LensSpecification?.description
+  //     exif.lens_model = tags?.LensModel?.description
+  //     exif.exposure_mode = tags?.ExposureMode?.description
+  //     exif.cfa_pattern = tags?.CFAPattern?.description
+  //     exif.color_space = tags?.ColorSpace?.description
+  //     exif.white_balance = tags?.WhiteBalance?.description
+  //     imgData.exif = exif
+  //   }
+  // } catch (e) {
+  //   console.log(e)
+  //   if (e?.status === 413) {
+  //     //toast.add({ title: '上传文件大小超出限制！', timeout: 2000, color: 'red' })
+  //     option.file.abort()
+  //   } else {
+  //     //toast.add({ title: e?.message, timeout: 2000, color: 'red' })
+  //   }
+  // }
 }
 
 async function submit() {
@@ -112,31 +133,31 @@ async function submit() {
       return
     }
     if (storage.value === 'alist' && imgData.mountPath === '') {
-    //  toast.add({ title: '请选择挂载目录！', timeout: 2000, color: 'red' })
+      //  toast.add({ title: '请选择挂载目录！', timeout: 2000, color: 'red' })
       loading.value = false
       return
     }
     if (imgData.type === '') {
-   //   toast.add({ title: '请选择类型！', timeout: 2000, color: 'red' })
+      //   toast.add({ title: '请选择类型！', timeout: 2000, color: 'red' })
       loading.value = false
       return
     }
     try {
-      const res = await fetch('/api/addImg', {
-        timeout: 60000,
-        method: 'post',
-        headers: {
-          Authorization: `${user.tokenName} ${user.token}`,
-        },
-        body: imgData,
-      })
-      if (res?.code === 200) {
-    //    toast.add({ title: '保存成功！', timeout: 2000 })
-      } else {
-    //    toast.add({ title: '保存失败！', timeout: 2000, color: 'red' })
-      }
+      // const res = await fetch('/api/addImg', {
+      //   timeout: 60000,
+      //   method: 'post',
+      //   headers: {
+      //     Authorization: `${user.tokenName} ${user.token}`,
+      //   },
+      //   body: imgData,
+      // })
+      // if (res?.code === 200) {
+      //   //    toast.add({ title: '保存成功！', timeout: 2000 })
+      // } else {
+      //   //    toast.add({ title: '保存失败！', timeout: 2000, color: 'red' })
+      // }
     } catch (e) {
-   //   toast.add({ title: '保存失败！', timeout: 2000, color: 'red' })
+      //   toast.add({ title: '保存失败！', timeout: 2000, color: 'red' })
     }
   } finally {
     loading.value = false
@@ -173,16 +194,16 @@ function removeFile() {
 
 function onBeforeUpload(file) {
   if (!storage.value || storage.value === '') {
-   // toast.add({ title: '请先选择存储！', timeout: 2000, color: 'red' })
+    // toast.add({ title: '请先选择存储！', timeout: 2000, color: 'red' })
     file.abort()
   } else if (storage.value === 'alist' && (!imgData.mountPath || imgData.mountPath === '')) {
- //   toast.add({ title: '请先选择挂载目录！', timeout: 2000, color: 'red' })
+    //   toast.add({ title: '请先选择挂载目录！', timeout: 2000, color: 'red' })
     file.abort()
   } else if (!imgData.type || imgData.type === '') {
-  //  toast.add({ title: '请先选择图片类别！', timeout: 2000, color: 'red' })
+    //  toast.add({ title: '请先选择图片类别！', timeout: 2000, color: 'red' })
     file.abort()
   } else {
-  //  toast.add({ title: '正在上传文件！', timeout: 1000 })
+    //  toast.add({ title: '正在上传文件！', timeout: 1000 })
   }
 }
 
@@ -190,38 +211,38 @@ const exceed = () => {
 //  toast.add({ title: '只能同时上传一张图片！', timeout: 2000, color: 'red' })
 }
 
-watch(storage, async (val) => {
-  if (val === 'alist') {
-    if (mountOptions.value.length === 0) {
-      try {
-     //   toast.add({ title: '正在获取 AList 挂载目录！', timeout: 2000 })
-        const res = await fetch('/api/getStorageList', {
-          timeout: 60000,
-          method: 'get',
-          headers: {
-            Authorization: `${user.tokenName} ${user.token}`,
-          },
-        })
-        if (res?.code === 200) {
-          // 遍历数组，给 mountOptions 赋值
-          res?.data.forEach((item) => {
-            if (item.status === 'work') {
-              mountOptions.value.push({
-                label: item.mount_path,
-                value: item.mount_path,
-              })
-            }
-          })
-        }
-        mountSelectShow.value = true
-      } catch (e) {
-       // toast.add({ title: 'AList 挂载目录获取失败！', timeout: 2000, color: 'red' })
-      }
-    }
-  } else {
-    mountSelectShow.value = false
-  }
-})
+// watch(storage, async (val) => {
+//   if (val === 'alist') {
+//     if (mountOptions.value.length === 0) {
+//       try {
+//         //   toast.add({ title: '正在获取 AList 挂载目录！', timeout: 2000 })
+//         const res = await fetch('/api/getStorageList', {
+//           timeout: 60000,
+//           method: 'get',
+//           headers: {
+//             Authorization: `${user.tokenName} ${user.token}`,
+//           },
+//         })
+//         if (res?.code === 200) {
+//           // 遍历数组，给 mountOptions 赋值
+//           res?.data.forEach((item) => {
+//             if (item.status === 'work') {
+//               mountOptions.value.push({
+//                 label: item.mount_path,
+//                 value: item.mount_path,
+//               })
+//             }
+//           })
+//         }
+//         mountSelectShow.value = true
+//       } catch (e) {
+//         // toast.add({ title: 'AList 挂载目录获取失败！', timeout: 2000, color: 'red' })
+//       }
+//     }
+//   } else {
+//     mountSelectShow.value = false
+//   }
+// })
 
 onBeforeMount(() => {
   if (photosList) {
@@ -260,7 +281,7 @@ onUnmounted(() => {
               :value="item.value"
           />
         </el-select>
-        <el-button v-if="fileUrl" round :loading="loading" @click="submit"> 保存 </el-button>
+        <el-button v-if="fileUrl" round :loading="loading" @click="submit"> 保存</el-button>
       </div>
       <div v-if="mountSelectShow && mountOptions.length > 0" flex items-center justify-center pb-2>
         <el-select v-model="imgData.mountPath" m-2 placeholder="请选择挂载目录">
@@ -289,7 +310,12 @@ onUnmounted(() => {
           accept="image/jpg, image/jpeg, image/png, image/tiff, image/heic, image/heif, image/webp, image/avif"
       >
         <div flex justify-center items-center p2>
-          <svg size-8 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32"><path d="M11 18l1.41 1.41L15 16.83V29h2V16.83l2.59 2.58L21 18l-5-5l-5 5z" fill="currentColor"></path><path d="M23.5 22H23v-2h.5a4.5 4.5 0 0 0 .36-9H23l-.1-.82a7 7 0 0 0-13.88 0L9 11h-.86a4.5 4.5 0 0 0 .36 9H9v2h-.5A6.5 6.5 0 0 1 7.2 9.14a9 9 0 0 1 17.6 0A6.5 6.5 0 0 1 23.5 22z" fill="currentColor"></path></svg>
+          <svg size-8 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32">
+            <path d="M11 18l1.41 1.41L15 16.83V29h2V16.83l2.59 2.58L21 18l-5-5l-5 5z" fill="currentColor"></path>
+            <path
+                d="M23.5 22H23v-2h.5a4.5 4.5 0 0 0 .36-9H23l-.1-.82a7 7 0 0 0-13.88 0L9 11h-.86a4.5 4.5 0 0 0 .36 9H9v2h-.5A6.5 6.5 0 0 1 7.2 9.14a9 9 0 0 1 17.6 0A6.5 6.5 0 0 1 23.5 22z"
+                fill="currentColor"></path>
+          </svg>
         </div>
         <div class="el-upload__text">
           点击或者拖动图片到该区域来上传
@@ -311,7 +337,7 @@ onUnmounted(() => {
         />
         <div flex flex-row space-x-2>
           <p>评分：</p>
-          <el-rate v-model="imgData.rating" />
+          <el-rate v-model="imgData.rating"/>
         </div>
 
       </div>

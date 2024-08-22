@@ -62,8 +62,6 @@ onBeforeMount(() => {
 })
 
 const logout = () => {
-  user.setToken('')
-  user.setTokenName('')
   router.push('/')
 }
 
@@ -73,19 +71,61 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header sticky top-0 z-20 bg-white dark:bg-custom-black>
-    <nav relative bg-white dark:bg-black>
+  <header sticky top-0 z-20  backdrop-blur-lg  backdrop-saturate-150 bg-op-70>
+    <nav relative>
       <div flex container px-6 py-4 mx-auto md:flex md:justify-between md:items-center>
         <div flex items-center justify-between w-full md:w-36>
           <img class="h-8 w-auto" src="/vite.svg" cursor-pointer @click="router.push('/')" alt="logo">
         </div>
 
         <div v-if="mdAndLarger" flex items-center justify-center space-x-3>
-          <DarkToggle />
+
+            <DarkToggle />
+
+          <el-popover>
+            <template #reference>
+              <el-button color="white">
+                <div class="i-carbon-app"></div>
+              </el-button>
+            </template>
+
+            <template #default>
+              <div p-2>
+                <RouterLink
+                    v-for="item in routeList"
+                    :key="item.to"
+                    :to="item.to"
+                    flex flex-row items-center rounded-md
+                    block px-5 py-2 focus-blue w-full
+                    transition-colors duration-200 transform
+                    hover="bg-gray-100 dark:(bg-gray-700 text-white)"
+                    :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                    :aria-label="item.title"
+                >
+                  <span :class="item.icon" text-xl me-4 />{{ item.title }}
+                </RouterLink>
+                <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2 />
+                <RouterLink
+                    v-for="item in systemRouterList"
+                    :key="item.to"
+                    :to="item.to"
+                    flex flex-row items-center rounded-md
+                    block px-5 py-2 focus-blue w-full
+                    transition-colors duration-200 transform
+                    hover="bg-gray-100 dark:(bg-gray-700 text-white)"
+                    :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                    :aria-label="item.title"
+                >
+                  <span :class="item.icon" text-xl me-4 />{{ item.title }}
+                </RouterLink>
+              </div>
+            </template>
+          </el-popover>
 
 
-          <el-button type="primary" v-if="!user.token"  @click="router.push('/login')" >登录</el-button>
-          <el-button type="primary" v-if="user.token && route.path.startsWith('/admin')"  @click="logout" > 退出</el-button>
+
+          <el-button v-if="!user.token"  color="white" @click="router.push('/login')">登录</el-button>
+          <el-button v-if="user.token && route.path.startsWith('/admin')" color="white" @click="logout">注销</el-button>
         </div>
       </div>
     </nav>

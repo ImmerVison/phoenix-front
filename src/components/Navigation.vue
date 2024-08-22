@@ -1,14 +1,74 @@
 <script setup>
 
-const channels = ref(
-    [
-        { title: '首页', path: '/home' },
-        { title: '动态', path: '/dynamic' },
-        { title: '关注', path: '/follow' },
-        { title: '消息', path: '/message' },
-        { title: '我的', path: '/mine' },
-    ]
-)
+import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
+import {useUserStore} from '~/store/index.js'
+import {useRouter, useRoute} from 'vue-router'
+import photosList from '~/constants/photos.json'
+import DarkToggle from "~/components/DarkToggle.vue";
+const breakpoints = useBreakpoints(breakpointsTailwind)
+const mdAndLarger = breakpoints.greaterOrEqual('md')
+const router = useRouter()
+const route = useRoute()
+const user = useUserStore()
+const isOpen = ref(false)
+
+const routeList = ref([])
+const systemRouterList = ref([
+  {
+    title: '控制台',
+    to: '/admin',
+    icon: 'i-carbon-earth-southeast-asia-filled',
+  },
+  {
+    title: '上传',
+    to: '/admin/upload',
+    icon: 'i-carbon-send-alt',
+  },
+  {
+    title: '维护',
+    to: '/admin/list',
+    icon: 'i-carbon-cics-sit-overrides',
+  },
+  {
+    title: '系统',
+    to: '/admin/system',
+    icon: 'i-carbon-cloud-alerting',
+  },
+])
+
+watch(() => route.path, () => {
+  isOpen.value = false
+})
+
+onBeforeMount(() => {
+  routeList.value.push({
+    title: '首页',
+    to: '/',
+    icon: 'i-carbon-aperture',
+  })
+  if (photosList && photosList?.length > 0) {
+    photosList.forEach((item) => {
+      routeList.value.push({
+        title: item.title,
+        to: item.url,
+        icon: item.icon && item.icon !== '' ? item.icon : 'i-carbon-debug',
+      })
+    })
+  }
+  routeList.value.push({
+    title: '关于',
+    to: '/about',
+    icon: 'i-carbon-warning',
+  })
+})
+
+const logout = () => {
+  router.push('/')
+}
+
+onBeforeUnmount(() => {
+  routeList.value = []
+})
 </script>
 
 <template>
@@ -16,17 +76,40 @@ const channels = ref(
 <!--      <Logo/>-->
 
       <div>
-        <div  class="box-border h-[64px]">
-          <!--        <span class="bg-[#39c5bb] rd-md font-mono text-[0.8rem] p-[0.125rem]" >-->
-          <!--          Phoenix-->
-          <!--        </span>-->
+        <div  class="box-border h-[64px] flex items-center justify-center w-full">
+          <img class="h-8 w-auto" src="/vite.svg" cursor-pointer @click="router.push('/')" alt="logo">
         </div>
 
         <div class="flex flex-col is-justify-center items-center">
-          <template v-for="channel in channels">
-            <div  class=""/>
-            {{channel.title}}
-          </template>
+
+            <RouterLink
+                v-for="item in routeList"
+                :key="item.to"
+                :to="item.to"
+                flex flex-row items-center rounded-md
+                block px-5 py-2 focus-blue w-full
+                transition-colors duration-200 transform
+                hover="bg-gray-100 dark:(bg-gray-700 text-white)"
+                :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                :aria-label="item.title"
+            >
+              <span :class="item.icon" text-xl me-4 />{{ item.title }}
+            </RouterLink>
+            <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2 />
+            <RouterLink
+                v-for="item in systemRouterList"
+                :key="item.to"
+                :to="item.to"
+                flex flex-row items-center rounded-md
+                block px-5 py-2 focus-blue w-full
+                transition-colors duration-200 transform
+                hover="bg-gray-100 dark:(bg-gray-700 text-white)"
+                :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                :aria-label="item.title"
+            >
+              <span :class="item.icon" text-xl me-4 />{{ item.title }}
+            </RouterLink>
+
 
         </div>
 
