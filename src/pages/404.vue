@@ -8,8 +8,8 @@ const router = useRouter();
       <h1 class="text-2xl font-bold">404</h1>
       <div class="bg-gray-400 h-12 w-[0.5px] mx-4"></div>
       <p class="font-sm">This page could not be found.</p>
-      <button class="btn btn-circle ml-2" @click="router.push('/')">
-        <i class="i-material-symbols-door-front-sharp"/>
+      <button class="mt-1 ml-2" @click="router.push('/')">
+        <i class="i-carbon:ibm-engineering-requirements-doors-next"/>
       </button>
     </div>
   </div>

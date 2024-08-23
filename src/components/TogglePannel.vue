@@ -23,14 +23,25 @@ const togglePanel = () => {
 
 <template>
 
-  <div class="
-        backdrop-blur-2 saturate-120%
-        pa-1 rd-50% mr-2 cursor-pointer icon-btn"
-       @click="togglePanel"
-      >
-    <div class="i-carbon:menu:border-none w-[1.1rem]"></div>
-  </div>
 
+
+
+  <el-button
+      @click="togglePanel"
+      size="small"
+
+      class="
+
+
+              flex items-center justify-center w-6 h-full rounded-sm
+              outline-none data-[focus-visible=true]:z-10
+              data-[focus-visible=true]:outline-2
+              data-[focus-visible=true]:outline-auto
+              data-[focus-visible=true]:outline-offset-2
+              sm:hidden
+               select-none">
+    <div class="i-carbon:menu:border-none w-16px h-16px color-black-200"></div>
+  </el-button>
 </template>
 
 <style scoped>

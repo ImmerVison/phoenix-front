@@ -75,20 +75,26 @@ const togglePanel = () => {
           flex justify-center pt-8 overflow-y-auto max-h-full">
 
 
-            <!--            <div class="w-full max-w-[800px]">-->
-            <!--              <div>-->
+                        <div class="w-full max-w-[800px]">
 
-            <!--              </div>-->
-            <!--              <main class="flex-1 p-3">-->
-            <!--                <div class="search-box">-->
+                          <div class="w-[1rem] h-[1rem] bg-black"/>
+                          <div>
+                            <p text-base>基础</p>
+                          </div>
+                          <div class="w-[1em] h-[1em] bg-black">
 
-            <!--                </div>-->
-            <!--                <div ref="listRef">-->
 
-            <!--                </div>-->
-            <!--                <div class="h-[64px]"></div>-->
-            <!--              </main>-->
-            <!--            </div>-->
+                          </div>
+                          <main class="flex-1 p-3">
+                            <div class="search-box">
+
+                            </div>
+                            <div ref="listRef">
+
+                            </div>
+                            <div class="h-[64px]"></div>
+                          </main>
+                        </div>
 
           </div>
         </div>

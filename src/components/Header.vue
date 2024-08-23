@@ -4,6 +4,7 @@ import {useUserStore, usePanelStore} from '~/store/index.js'
 import {useRouter, useRoute} from 'vue-router'
 import photosList from '~/constants/photos.json'
 import DarkToggle from "~/components/DarkToggle.vue";
+
 const breakpoints = useBreakpoints(breakpointsTailwind)
 const mdAndLarger = breakpoints.greaterOrEqual('md')
 const router = useRouter()
@@ -86,8 +87,8 @@ onBeforeUnmount(() => {
        <TogglePannel/>
 
 
+      <Search/>
 
-        <Search/>
         <div v-if="mdAndLarger" flex items-center justify-center space-x-3>
 
             <DarkToggle />

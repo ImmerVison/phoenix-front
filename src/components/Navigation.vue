@@ -15,19 +15,19 @@ const isOpen = ref(false)
 const routeList = ref([])
 const systemRouterList = ref([
   {
-    title: '控制台',
+    title: '首页',
     to: '/admin',
-    icon: 'i-carbon-earth-southeast-asia-filled',
+    icon: 'i-carbon:home',
   },
   {
-    title: '上传',
+    title: '发布',
     to: '/admin/upload',
-    icon: 'i-carbon-send-alt',
+    icon: 'i-carbon:upload',
   },
   {
-    title: '维护',
+    title: '通知',
     to: '/admin/list',
-    icon: 'i-carbon-cics-sit-overrides',
+    icon: 'i-carbon:message-queue',
   },
   {
     title: '系统',
@@ -40,27 +40,27 @@ watch(() => route.path, () => {
   isOpen.value = false
 })
 
-onBeforeMount(() => {
-  routeList.value.push({
-    title: '首页',
-    to: '/',
-    icon: 'i-carbon-aperture',
-  })
-  if (photosList && photosList?.length > 0) {
-    photosList.forEach((item) => {
-      routeList.value.push({
-        title: item.title,
-        to: item.url,
-        icon: item.icon && item.icon !== '' ? item.icon : 'i-carbon-debug',
-      })
-    })
-  }
-  routeList.value.push({
-    title: '关于',
-    to: '/about',
-    icon: 'i-carbon-warning',
-  })
-})
+// onBeforeMount(() => {
+//   routeList.value.push({
+//     title: '首页',
+//     to: '/',
+//     icon: 'i-carbon-aperture',
+//   })
+//   if (photosList && photosList?.length > 0) {
+//     photosList.forEach((item) => {
+//       routeList.value.push({
+//         title: item.title,
+//         to: item.url,
+//         icon: item.icon && item.icon !== '' ? item.icon : 'i-carbon-debug',
+//       })
+//     })
+//   }
+//   routeList.value.push({
+//     title: '关于',
+//     to: '/about',
+//     icon: 'i-carbon-warning',
+//   })
+// })
 
 const logout = () => {
   router.push('/')
