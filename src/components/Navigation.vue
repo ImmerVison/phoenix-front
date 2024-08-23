@@ -72,8 +72,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="flex flex-col justify-between w-full h-full" >
-<!--      <Logo/>-->
+    <div class="flex flex-col justify-between w-full h-full bg-white dark:bg-#09090B border-r" >
 
       <div>
         <div  class="box-border h-[64px] flex items-center justify-center w-full">
@@ -89,8 +88,8 @@ onBeforeUnmount(() => {
                 flex flex-row items-center rounded-md
                 block px-5 py-2 focus-blue w-full
                 transition-colors duration-200 transform
-                hover="bg-gray-100 dark:(bg-gray-700 text-white)"
-                :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+                :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-gray-200'"
                 :aria-label="item.title"
             >
               <span :class="item.icon" text-xl me-4 />{{ item.title }}
@@ -101,9 +100,9 @@ onBeforeUnmount(() => {
                 :key="item.to"
                 :to="item.to"
                 flex flex-row items-center rounded-md
-                block px-5 py-2 focus-blue w-full
+                block px-5 py-2 w-full
                 transition-colors duration-200 transform
-                hover="bg-gray-100 dark:(bg-gray-700 text-white)"
+                hover="bg-gray-200 dark:(bg-gray-700 text-white)"
                 :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
                 :aria-label="item.title"
             >
@@ -117,15 +116,19 @@ onBeforeUnmount(() => {
 
 
 
-
-      <div>
-        <el-image
-          src="https://cdn.jsdelivr.net/gh/Phoenix-Server/Phoenix-Server.github.io/src/assets/logo.png"
-          fit="cover"
-          class="h-[64px] w-[64px]"
-        ></el-image>
+      <div flex items-center rounded-md
+           block px-5 py-2 w-full mb-2
+           transition-colors duration-200 transform
+           hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+      >
+        <span
+            hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+            text-gray-700 dark:text-gray-200
+            class="i-carbon:menu:border-none" text-xl me-4 />
+        <p
+            hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+             text-gray-700 dark:text-gray-200>更多</p>
       </div>
-
 
     </div>
 </template>

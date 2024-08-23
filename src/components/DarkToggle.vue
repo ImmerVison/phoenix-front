@@ -65,7 +65,7 @@ function toggleDark(event) {
     <button
         class="font-medium whitespace-nowrap box-border list-none data-[active=true]:font-semibold flex h-full items-center"
         @click="toggleDark" >
-      <div class="dark:i-carbon-moon i-carbon-sun"></div>
+      <div dark:text-white  class="dark:i-carbon-moon i-carbon-sun"></div>
     </button>
 
 <!--  <li class="font-medium whitespace-nowrap box-border list-none data-[active=true]:font-semibold flex h-full items-center">-->

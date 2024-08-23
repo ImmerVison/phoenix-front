@@ -1,5 +1,6 @@
 
 import { acceptHMRUpdate, defineStore } from 'pinia'
+import {ref} from "vue";
 export const useMainStore = defineStore('main', () => {
   const books = ref([])
 
@@ -143,6 +144,33 @@ export const useMainStore = defineStore('main', () => {
 
 })
 
+
+export const usePanelStore = defineStore('pannel', () => {
+  const panelMinWidth = ref()
+  const leftWidth = ref(0)
+
+  const setPanelMinWidth = (width) => {
+    panelMinWidth.value = width
+  }
+
+  const setLeftWidth = (width) => {
+    leftWidth.value = width
+  }
+
+  const togglePanel = () => {
+    leftWidth.value = Math.abs(leftWidth.value - panelMinWidth.value)
+  }
+
+  return {
+    panelMinWidth,
+    leftWidth,
+    setPanelMinWidth,
+    setLeftWidth,
+    togglePanel
+  }
+
+
+})
 
 export const useUserStore = defineStore('user', {
   state: () => ({

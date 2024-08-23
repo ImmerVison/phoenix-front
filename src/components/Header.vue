@@ -1,6 +1,6 @@
 <script setup>
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
-import {useUserStore} from '~/store/index.js'
+import {useUserStore, usePanelStore} from '~/store/index.js'
 import {useRouter, useRoute} from 'vue-router'
 import photosList from '~/constants/photos.json'
 import DarkToggle from "~/components/DarkToggle.vue";
@@ -10,6 +10,13 @@ const router = useRouter()
 const route = useRoute()
 const user = useUserStore()
 const isOpen = ref(false)
+
+const panelStore = usePanelStore()
+
+const togglePanel = () => {
+  panelStore.togglePanel()
+  localStorage.setItem('menuOpen', panelStore.leftWidth > 0 ? '1' : '0')
+}
 
 const routeList = ref([])
 const systemRouterList = ref([
@@ -74,10 +81,13 @@ onBeforeUnmount(() => {
   <header sticky top-0 z-20  backdrop-blur-lg  backdrop-saturate-150 bg-op-70>
     <nav relative>
       <div flex container px-6 py-4 mx-auto md:flex md:justify-between md:items-center>
-        <div flex items-center justify-between w-full md:w-36>
-          <img class="h-8 w-auto" src="/vite.svg" cursor-pointer @click="router.push('/')" alt="logo">
-        </div>
 
+
+       <TogglePannel/>
+
+
+
+        <Search/>
         <div v-if="mdAndLarger" flex items-center justify-center space-x-3>
 
             <DarkToggle />
