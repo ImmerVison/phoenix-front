@@ -13,7 +13,9 @@ onMounted(() => {
 
 
 const togglePanel = () => {
+  console.log(`togglePanel`)
   panelStore.togglePanel()
+  panelStore.toggleDrawer()
   localStorage.setItem('menuOpen', panelStore.leftWidth > 0 ? '1' : '0')
 }
 

@@ -9,6 +9,15 @@
       <div v-if="tips" class="tips">{{ tips }}</div>
     </div>
   </h2>
+
+
+  <div class="flex sticky top-0 left-0 right-0 z-10 place-content-between p-4 gap-2
+          shadow-sm
+          backdrop-filter backdrop-blur-lg
+          is-transparent
+          bg-[rgba(255, 255, 255, .5)] dark:bg-[(rgba(0, 0, 0, .5))]">
+
+  </div>
 </template>
 
 <script setup>

@@ -30,9 +30,8 @@ body {
   --at-apply: "dark:bg-#131130";
   --sb-track-color: #009ee6;
   --sb-thumb-color: #22bd9d;
-  --sb-size: 10px;
+  --sb-size: 4px;
 
-  scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
 }
 
 body::-webkit-scrollbar {
@@ -41,12 +40,12 @@ body::-webkit-scrollbar {
 
 body::-webkit-scrollbar-track {
   background: var(--sb-track-color);
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 body::-webkit-scrollbar-thumb {
   background: var(--sb-thumb-color);
-  border-radius: 10px;
+  border-radius: 2px;
 }
 
 

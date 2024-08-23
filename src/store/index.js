@@ -148,7 +148,19 @@ export const useMainStore = defineStore('main', () => {
 export const usePanelStore = defineStore('pannel', () => {
   const panelMinWidth = ref()
   const leftWidth = ref(0)
+  const drawer = ref(false)
 
+  const openDrawer = () => {
+    drawer.value = true
+  }
+
+    const closeDrawer = () => {
+      drawer.value = false
+    }
+
+    const toggleDrawer = () => {
+        drawer.value = !drawer.value
+    }
   const setPanelMinWidth = (width) => {
     panelMinWidth.value = width
   }
@@ -166,7 +178,11 @@ export const usePanelStore = defineStore('pannel', () => {
     leftWidth,
     setPanelMinWidth,
     setLeftWidth,
-    togglePanel
+    togglePanel,
+    drawer,
+    openDrawer,
+    closeDrawer,
+    toggleDrawer
   }
 
 

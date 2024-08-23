@@ -1,5 +1,5 @@
 <script setup>
-import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
+import {breakpointsTailwind, useBreakpoints} from '@vueuse/core'
 import {useUserStore, usePanelStore} from '~/store/index.js'
 import {useRouter, useRoute} from 'vue-router'
 import photosList from '~/constants/photos.json'
@@ -79,19 +79,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header sticky top-0 z-20  backdrop-blur-lg  backdrop-saturate-150 bg-op-70>
+
+  <header sticky top-0 z-20
+          inset-x-0 bg-transparent
+          backdrop-blur-lg backdrop-saturate-150 bg-op-70>
     <nav relative>
       <div flex container px-6 py-4 mx-auto md:flex md:justify-between md:items-center>
-
-
-       <TogglePannel/>
-
-
-      <Search/>
-
+        <TogglePannel/>
+        <Search/>
         <div v-if="mdAndLarger" flex items-center justify-center space-x-3>
 
-            <DarkToggle />
+          <DarkToggle/>
 
           <el-popover>
             <template #reference>
@@ -113,9 +111,9 @@ onBeforeUnmount(() => {
                     :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
                     :aria-label="item.title"
                 >
-                  <span :class="item.icon" text-xl me-4 />{{ item.title }}
+                  <span :class="item.icon" text-xl me-4/>{{ item.title }}
                 </RouterLink>
-                <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2 />
+                <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2/>
                 <RouterLink
                     v-for="item in systemRouterList"
                     :key="item.to"
@@ -127,15 +125,14 @@ onBeforeUnmount(() => {
                     :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
                     :aria-label="item.title"
                 >
-                  <span :class="item.icon" text-xl me-4 />{{ item.title }}
+                  <span :class="item.icon" text-xl me-4/>{{ item.title }}
                 </RouterLink>
               </div>
             </template>
           </el-popover>
 
 
-
-          <el-button v-if="!user.token"  color="white" @click="router.push('/login')">登录</el-button>
+          <el-button v-if="!user.token" color="white" @click="router.push('/login')">登录</el-button>
           <el-button v-if="user.token && route.path.startsWith('/admin')" color="white" @click="logout">注销</el-button>
         </div>
       </div>

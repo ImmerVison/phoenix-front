@@ -153,17 +153,17 @@ onUnmounted(() => {
 
           <template #default>
             <div flex flex-col space-y-2>
-              <el-card class="box-card" mx-auto rounded-lg shadow-md w-full>
-                <h3 flex justify-center items-center space-x-1 text-base text-center font-medium>
-                  <div i-carbon-camera/>
-                  <p>相机</p>
-                </h3>
-                <p mt-1 text-center>{{ obj?.exif?.model || 'N&A' }}</p>
-              </el-card>
+<!--              <el-card class="box-card" mx-auto rounded-lg shadow-md w-full>-->
+<!--                <h3 flex justify-center items-center space-x-1 text-base text-center font-medium>-->
+<!--                  <div i-carbon-camera/>-->
+<!--                  <p>相机</p>-->
+<!--                </h3>-->
+<!--                <p mt-1 text-center>{{ obj?.exif?.model || 'N&A' }}</p>-->
+<!--              </el-card>-->
               <el-card class="box-card" mx-auto rounded-lg shadow-md w-full>
                 <h3 flex justify-center items-center space-x-1 text-base text-center font-medium>
                   <div i-carbon-txt/>
-                  <p>相片描述</p>
+                  <p>描述</p>
                 </h3>
                 <p mt-1 text-center>{{ obj?.detail || 'N&A' }}</p>
               </el-card>
