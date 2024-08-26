@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
                 :key="item.to"
                 :to="item.to"
                 flex flex-row items-center rounded-md
-                block px-5 py-2 focus-blue w-full
+                block px-5 py-2 w-full
                 transition-colors duration-200 transform
                 hover="bg-gray-200 dark:(bg-gray-700 text-white)"
                 :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-gray-200'"

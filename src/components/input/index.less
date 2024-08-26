@@ -1,0 +1,129 @@
+// -------- Colors -----------
+@pcolor: #2B5AED; // 全局主色
+@lcolor: #1890ff; // 链接色
+@scolor: #1FB4A2; // 成功色
+@wcolor: #F5AC08; // 警告色
+@ecolor: #FA5247; // 错误色
+@gray: #1E2025;
+
+// Animation
+@animats: 0.3s; // Modal
+@animatb: 0.2s;
+@animatf: 0.1s; // Tooltip
+
+//font-size
+@size-ss: 12px; // 小号
+@size-s: 14px; // 主字号
+@size-m: 16px; // 大一号
+@size-l: 20px; // 大二号
+@size-xl: 32px; // 特大号
+
+//font-color
+@font-color-l: var(--fontcolorl, rgba(30, 32, 37, 1));
+@font-color-m: var(--fontcolorm, rgba(30, 32, 37, 0.8));
+@font-color-s: var(--fontcolors, rgba(30, 32, 37, 0.5));
+@font-color-ss: var(--fontcolorss, rgba(30, 32, 37, 0.3));
+
+//bg-color
+@bg-color-l: var(--bgcolorl, #fff);
+@bg-color-m: var(--bgcolorm, #F6F6F8);
+@bg-color-s: var(--bgcolors, #F3F3F4);
+@bg-color-ss: var(--bgcolorss, #E8E8E8);
+
+//line-color
+@line-color-s: var(--linecolorm, #E8E8E8);
+@line-color-m: var(--linecolors, #D1D1D2);
+// @line-color-l: var(--linecolorl, #9EA2AB);
+
+//radius
+@radius-l: 12px;
+@radius-xl: 16px;
+@radius-m: 8px;
+@radius-s: 4px;
+@radius-r: 800px;
+
+//背景投影
+@shadow-s: 0 6px 6px -2px rgba(0, 0, 0, 0.12);
+@shadow-m: 0 4px 16px 0 rgba(0, 0, 0, 0.16);
+@shadow-l: 0 4px 48px 0 rgba(0, 0, 0, 0.12);
+
+//间距space
+@space-ss: 4px;
+@space-s: 8px;
+@space-m: 16px;
+@space-l: 24px;
+
+
+
+
+//主色渐变
+@pcolor-1:fade(@pcolor, 10%);
+@pcolor-2:fade(@pcolor, 20%);
+@pcolor-3:fade(@pcolor, 40%);
+@pcolor-4:fade(@pcolor, 60%);
+@pcolor-5:fade(@pcolor, 80%);
+@pcolor-6:@pcolor;
+@pcolor-7:mix(@pcolor, #000, 80%);
+@pcolor-8:mix(@pcolor, #000, 60%);
+@pcolor-9:mix(@pcolor, #000, 40%);
+@pcolor-10:mix(@pcolor, #000, 20%);
+
+//成功色
+@scolor-1:fade(@scolor, 10%);
+@scolor-2:fade(@scolor, 20%);
+@scolor-3:fade(@scolor, 40%);
+@scolor-4:fade(@scolor, 60%);
+@scolor-5:fade(@scolor, 80%);
+@scolor-6:@scolor;
+@scolor-7:mix(@scolor, #000, 80%);
+@scolor-8:mix(@scolor, #000, 60%);
+@scolor-9:mix(@scolor, #000, 40%);
+@scolor-10:mix(@scolor, #000, 20%);
+
+//警告色
+@wcolor-1:fade(@wcolor, 10%);
+@wcolor-2:fade(@wcolor, 20%);
+@wcolor-3:fade(@wcolor, 40%);
+@wcolor-4:fade(@wcolor, 60%);
+@wcolor-5:fade(@wcolor, 80%);
+@wcolor-6:@wcolor;
+@wcolor-7:mix(@wcolor, #000, 80%);
+@wcolor-8:mix(@wcolor, #000, 60%);
+@wcolor-9:mix(@wcolor, #000, 40%);
+@wcolor-10:mix(@wcolor, #000, 20%);
+
+//错误色
+@ecolor-1:fade(@ecolor, 10%);
+@ecolor-2:fade(@ecolor, 20%);
+@ecolor-3:fade(@ecolor, 40%);
+@ecolor-4:fade(@ecolor, 60%);
+@ecolor-5:fade(@ecolor, 80%);
+@ecolor-6:@ecolor;
+@ecolor-7:mix(@ecolor, #000, 80%);
+@ecolor-8:mix(@ecolor, #000, 60%);
+@ecolor-9:mix(@ecolor, #000, 40%);
+@ecolor-10:mix(@ecolor, #000, 20%);
+
+//中性色
+@gray-1:mix(@gray, #fff, 10%);
+
+// @lcolor: #1890ff; // 链接色
+// @scolor: #46B1A4; // 成功色
+// @wcolor: #F5AC08; // 警告色
+// @ecolor: #FA5247; // 错误色
+
+
+.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  display: inline-flex;
+  &::before {
+    content: "";
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    position: absolute;
+    z-index: 10;
+    left: 0;
+  }
+}

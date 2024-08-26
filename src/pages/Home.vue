@@ -6,6 +6,7 @@ import {usePanelStore} from "~/store/index.js";
 import RecommandView from "~/pages/RecommandView.vue";
 
 
+
 const panelStore = usePanelStore()
 //将 panelMinWidth 保存到 store 中
 panelStore.setPanelMinWidth(document.body.clientWidth / 2 > 256 ? 256 : document.body.clientWidth / 2)
@@ -46,6 +47,7 @@ const togglePanel = () => {
          bg-neutral-600 bg-opacity-50" @click="togglePanel"/>
         <div class="flex-1 relative max-h-screen overflow-hidden">
           <Header/>
+
           <div class="
           flex justify-center pt-8 overflow-y-auto max-h-full">
 
@@ -54,14 +56,17 @@ const togglePanel = () => {
 
               <main class="flex-1 p-3">
 
-                <RecommandView/>
+
+<!--                <RecommandView/>-->
                 <div class="search-box">
 
                 </div>
                 <div ref="listRef">
 
                 </div>
-                <div class="h-[64px]"></div>
+                <div class="h-[64px]">
+
+                </div>
               </main>
             </div>
 
@@ -91,7 +96,7 @@ const togglePanel = () => {
 
 .text-link {
   /* prettier-ignore */
-  --at-apply: text-sky-700
+  --at-apply: text-sky-700;
   hover: text-sky-500;
 }
 

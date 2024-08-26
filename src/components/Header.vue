@@ -5,6 +5,7 @@ import {useRouter, useRoute} from 'vue-router'
 import photosList from '~/constants/photos.json'
 import DarkToggle from "~/components/DarkToggle.vue";
 
+
 const breakpoints = useBreakpoints(breakpointsTailwind)
 const mdAndLarger = breakpoints.greaterOrEqual('md')
 const router = useRouter()
@@ -87,6 +88,8 @@ onBeforeUnmount(() => {
       <div flex container px-6 py-4 mx-auto md:flex md:justify-between md:items-center>
         <TogglePannel/>
         <Search/>
+
+
         <div v-if="mdAndLarger" flex items-center justify-center space-x-3>
 
           <DarkToggle/>
@@ -99,7 +102,7 @@ onBeforeUnmount(() => {
             </template>
 
             <template #default>
-              <div p-2>
+              <div p-2 >
                 <RouterLink
                     v-for="item in routeList"
                     :key="item.to"
@@ -108,7 +111,7 @@ onBeforeUnmount(() => {
                     block px-5 py-2 focus-blue w-full
                     transition-colors duration-200 transform
                     hover="bg-gray-100 dark:(bg-gray-700 text-white)"
-                    :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                    :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-black-200'"
                     :aria-label="item.title"
                 >
                   <span :class="item.icon" text-xl me-4/>{{ item.title }}
@@ -122,7 +125,7 @@ onBeforeUnmount(() => {
                     block px-5 py-2 focus-blue w-full
                     transition-colors duration-200 transform
                     hover="bg-gray-100 dark:(bg-gray-700 text-white)"
-                    :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                    :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-black-200'"
                     :aria-label="item.title"
                 >
                   <span :class="item.icon" text-xl me-4/>{{ item.title }}
