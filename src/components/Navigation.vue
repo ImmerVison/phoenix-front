@@ -16,22 +16,22 @@ const routeList = ref([])
 const systemRouterList = ref([
   {
     title: '首页',
-    to: '/admin',
+    to: '/',
     icon: 'i-carbon:home',
   },
   {
     title: '发布',
-    to: '/admin/upload',
+    to: '/upload',
     icon: 'i-carbon:upload',
   },
   {
     title: '通知',
-    to: '/admin/list',
+    to: '/list',
     icon: 'i-carbon:message-queue',
   },
   {
     title: '系统',
-    to: '/admin/system',
+    to: '/system',
     icon: 'i-carbon-cloud-alerting',
   },
 ])
@@ -40,27 +40,10 @@ watch(() => route.path, () => {
   isOpen.value = false
 })
 
-// onBeforeMount(() => {
-//   routeList.value.push({
-//     title: '首页',
-//     to: '/',
-//     icon: 'i-carbon-aperture',
-//   })
-//   if (photosList && photosList?.length > 0) {
-//     photosList.forEach((item) => {
-//       routeList.value.push({
-//         title: item.title,
-//         to: item.url,
-//         icon: item.icon && item.icon !== '' ? item.icon : 'i-carbon-debug',
-//       })
-//     })
-//   }
-//   routeList.value.push({
-//     title: '关于',
-//     to: '/about',
-//     icon: 'i-carbon-warning',
-//   })
-// })
+onBeforeMount(() => {
+
+  routeList.value.push()
+})
 
 const logout = () => {
   router.push('/')
@@ -82,20 +65,6 @@ onBeforeUnmount(() => {
         <div class="flex flex-col is-justify-center items-center">
 
             <RouterLink
-                v-for="item in routeList"
-                :key="item.to"
-                :to="item.to"
-                flex flex-row items-center rounded-md
-                block px-5 py-2 w-full
-                transition-colors duration-200 transform
-                hover="bg-gray-200 dark:(bg-gray-700 text-white)"
-                :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-gray-200'"
-                :aria-label="item.title"
-            >
-              <span :class="item.icon" text-xl me-4 />{{ item.title }}
-            </RouterLink>
-            <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2 />
-            <RouterLink
                 v-for="item in systemRouterList"
                 :key="item.to"
                 :to="item.to"
@@ -103,7 +72,7 @@ onBeforeUnmount(() => {
                 block px-5 py-2 w-full
                 transition-colors duration-200 transform
                 hover="bg-gray-200 dark:(bg-gray-700 text-white)"
-                :class="route.path === item.to ? 'text-custom-green' : 'text-gray-700 dark:text-gray-200'"
+                :class="route.path === item.to ? 'text-[#000000ff]' : 'text-gray-700 dark:text-gray-200'"
                 :aria-label="item.title"
             >
               <span :class="item.icon" text-xl me-4 />{{ item.title }}
@@ -114,22 +83,30 @@ onBeforeUnmount(() => {
 
       </div>
 
-
-
-      <div flex items-center rounded-md
-           block px-5 py-2 w-full mb-2
-           transition-colors duration-200 transform
-           hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+      <el-popover
+          placement="top"
       >
+
+        <template #reference>
+          <div flex items-center rounded-md
+               block px-5 py-2 w-full mb-2
+               transition-colors duration-200 transform
+               hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+          >
         <span
-            hover="bg-gray-200 dark:(bg-gray-700 text-white)"
             text-gray-700 dark:text-gray-200
             class="i-carbon:menu:border-none" text-xl me-4 />
-        <p
-            hover="bg-gray-200 dark:(bg-gray-700 text-white)"
-             text-gray-700 dark:text-gray-200>更多</p>
-      </div>
+            <p
+                hover="bg-gray-200 dark:(bg-gray-700 text-white)"
+                text-gray-700 dark:text-gray-200>更多</p>
+          </div>
 
+        </template>
+        <template #default>
+
+        </template>
+
+      </el-popover>
     </div>
 </template>
 
