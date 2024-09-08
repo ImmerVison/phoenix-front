@@ -1,5 +1,5 @@
 <script setup>
-import {breakpointsTailwind, useBreakpoints, useDark} from '@vueuse/core'
+import {breakpointsTailwind, useBreakpoints, useDark, useWindowSize} from '@vueuse/core'
 import {onMounted, onUnmounted} from "vue";
 
 const props = defineProps({
@@ -47,14 +47,44 @@ const breakPointsConfig = computed(() => {
     1024: {rowPerView: Number(appConfig.mobileRow) === 2 ? 2 : 1},
   }
 })
+// const loadNextImages = async () => {
+//   if (props.loading) return
+//   // loading.value = true
+//   emit('changeLoading', true)
+//   // currentIndex.value = Math.min(currentIndex.value + imagesPerLoad.value, imageUrls.value.length)
+//   //await emit('dataHandle')
+//   // loading.value = false
+//   emit('changeLoading', false)
+// }
+
+// const {height: windowHeight} = useWindowSize()
+// const handleScroll = () => {
+//   const scrollY = window.scrollY
+//   const documentHeight = document.documentElement.scrollHeight
+//   if (windowHeight.value + scrollY >= documentHeight - 100 && !props.loading) {
+//     loadNextImages()
+//   }
+// }
+
 
 onMounted(async () => {
-  mounted.value = true
-  emit('dataHandle')
+
+  try {
+    mounted.value = true
+    emit('dataHandle')
+    // await loadNextImages()
+  } catch (e) {
+    console.error('Error initializing gallery:', e)
+  }
+
 })
 
+// onMounted(() => {
+//   window.addEventListener('scroll', handleScroll)
+// })
 onUnmounted(() => {
   imgId.value = 0
+  // window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -74,9 +104,9 @@ onUnmounted(() => {
 
           <LazyImg
               shadow-xl border-4 hover:-translate-y-1 hover:scale-105 hover:transition duration-300 cursor-pointer
-              :url="item.url"
+              :url="item.previewUrl"
               @click="clickImg(item.id)"
-              :alt="item.singature"
+              :alt="item.name"
           />
         </div>
       </template>
@@ -91,12 +121,13 @@ onUnmounted(() => {
 
     <Canvas :showModal="showModal" :dataList="dataList" :imgId="imgId" @modalUpdate="modalUpdate" />
     <div v-if="handleButton && dataList?.length !== 0" flex justify-center items-center w-full h-24>
-      <el-button :loading="loading" @click="emit('dataHandle')">加载更多</el-button>
+      <el-button :loading="loading" round
+                 @click="emit('dataHandle')">加载更多</el-button>
     </div>
 
 <!--    <div class="flex my-18 justify-center select-none text-xs">-->
 <!--      <div class="flex items-center dark:c-gray-200"-->
-<!--           v-if="!(handleButton && dataList?.length !== 0)">-->
+<!--           v-if="handleButton && dataList?.length !== 0">-->
 <!--        Loading-->
 <!--        <i class="i-mdi-loading animate-iteration-infinite animate-spin block-->
 <!--        c-gray-600 dark:c-gray-200"/>-->
@@ -106,12 +137,26 @@ onUnmounted(() => {
 <!--        c-gray-600 dark:c-gray-200 cursor-pointer-->
 <!--        hover:bg-#4c1d9525 active:bg-#4c1d9545-->
 <!--        dark:c-gray-200 dark:hover:bg-violet-900 dark:active:bg-violet-800"-->
-<!--          >More</div>-->
-
+<!--          >More-->
+<!--      </div>-->
 <!--    </div>-->
+
+
   </div>
 </template>
 
 <style scoped>
+ :deep(.el-button:hover) {
+    background-color:  rgb(15 23 42);
+
+    color: #fff;
+  }
+
+ :deep(.el-button:active) {
+    background-color: #4c1d95;
+    border-color: #4c1d95;
+    color: #fff;
+  }
+
 
 </style>

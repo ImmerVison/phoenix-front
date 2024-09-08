@@ -35,6 +35,11 @@ export default defineConfig(({ mode }) => {
             hmr: true,
             open: true,
             proxy: {
+                "/phoenix": {
+                    target: "http://47.84.77.144:35722",
+                    changeOrigin: true,
+                    rewrite: (path) => path.replace(/^\/phoenix/, "")
+                },
                 "/api": {
                     target: "https://ciallo.link",
                     changeOrigin: true,

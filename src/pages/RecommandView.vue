@@ -1,7 +1,9 @@
 <script setup>
 
-import {getWaifu} from "~/api/app/getSetu.js";
+import {getByArtist, getWaifu} from "~/api/app/getSetu.js";
 import NavButton from "~/components/NavButton.vue";
+import PictureWall from "~/components/PictureWall.vue";
+import InfiniteLoad from "~/components/InfiniteLoad.vue";
 
 const dataList = ref([])
 const loading = ref(false)
@@ -13,6 +15,12 @@ const pageInfo = reactive({
   pageSize: 10,
 })
 
+
+
+
+const changeLoading = (state) => {
+  loading.value = state
+}
 
 const dataHandle = async () => {
   loading.value = true
@@ -53,37 +61,20 @@ const dataHandle = async () => {
   // endregion
 
 
-  // const res = await getSetu(
-  //     {
-  //       "size": [
-  //         "original"
-  //       ],
-  //       "num": pageInfo.pageSize
-  //     })
-  const res = await getWaifu({
-    // "size": [
-    //   "original"
-    // ],
-    // "num": pageInfo.pageSize
-  })
+ await getByArtist()
       .then(res => {
-
-        if(res?.data.images){
-          // 为数组中的每个元素添加一个唯一的id
-          res?.data.images.forEach((item, index) => {
-            item.id = item['image_id']
-          })
-        }
-
+        res?.data.data.list?.forEach((item, index) => {
+          item.id = item["pid"]
+        })
         if (dataList.value.length === 0) {
           // dataList.value = res?.data.data
-          dataList.value = res?.data.images
+          dataList.value = res?.data.data.list
         } else {
           //dataList.value = dataList.value.concat(res?.data.data)
-          dataList.value = dataList.value.concat(res?.data.images)
+          dataList.value = dataList.value.concat(res?.data.data.list)
         }
         // pageInfo.total = res?.data.data.size()
-        pageInfo.total = res?.data.images.length
+        pageInfo.total = res?.data.data.total
         pageInfo.totalPage += 1
 
       })
@@ -94,6 +85,40 @@ const dataHandle = async () => {
       .finally(() => {
         loading.value = false
       })
+  // const res = await getWaifu({
+  //   // "size": [
+  //   //   "original"
+  //   // ],
+  //   // "num": pageInfo.pageSize
+  // })
+  //     .then(res => {
+  //
+  //       if(res?.data.images){
+  //         // 为数组中的每个元素添加一个唯一的id
+  //         res?.data.images.forEach((item, index) => {
+  //           item.id = item['image_id']
+  //         })
+  //       }
+  //
+  //       if (dataList.value.length === 0) {
+  //         // dataList.value = res?.data.data
+  //         dataList.value = res?.data.images
+  //       } else {
+  //         //dataList.value = dataList.value.concat(res?.data.data)
+  //         dataList.value = dataList.value.concat(res?.data.images)
+  //       }
+  //       // pageInfo.total = res?.data.data.size()
+  //       pageInfo.total = res?.data.images.length
+  //       pageInfo.totalPage += 1
+  //
+  //     })
+  //     .catch(e => {
+  //       console.log(`error: ${e}`)
+  //       //   toast.add({ title: '加载失败！', timeout: 2000, color: 'red' })
+  //     })
+  //     .finally(() => {
+  //       loading.value = false
+  //     })
 
 
 }
@@ -132,8 +157,15 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <InfiniteLoad @load="dataHandle"
 
-  <Waterfall :dataList="dataList" :loading="loading" :handleButton="handleButton" @dataHandle="dataHandle"/>
+  >
+    <PictureWall :dataList="dataList" :loading="loading"
+                 :handleButton="handleButton"
+                 @changeLoading="changeLoading"
+                 @dataHandle="dataHandle"/>
+  </InfiniteLoad>
+
 </template>
 
 <style scoped>

@@ -78,6 +78,7 @@ onUnmounted(() => {
 
 <template>
   <el-dialog
+      fullscreen
       v-model="show"
       w-full min-h-full
       align-center
@@ -133,12 +134,12 @@ onUnmounted(() => {
 
         <el-image
             class="lg:h-[85vh]"
-            :src="obj?.url"
+            :src="obj?.linkUrl"
             :alt="obj?.detail"
             :zoom-rate="1.2"
             :max-scale="7"
             :min-scale="0.2"
-            :preview-src-list="[obj?.url]"
+            :preview-src-list="[obj?.linkUrl]"
             :initial-index="1"
             fit="contain"
         />
@@ -199,10 +200,7 @@ onUnmounted(() => {
             </el-card>
           </template>
         </el-tab-pane>
-
-
       </el-tabs>
-
     </div>
   </el-dialog>
 </template>

@@ -2,7 +2,7 @@
 import {useDark, useEventListener, useScroll} from "@vueuse/core";
 import {onMounted, reactive, ref, watchEffect} from "vue";
 import Title from "~/components/Title.vue";
-import {usePanelStore} from "~/store/index.js";
+import {usePanelStore, useGalleryScrollYStore} from "~/store/index.js";
 import RecommandView from "~/pages/RecommandView.vue";
 import Navigation from "~/components/Navigation.vue";
 import PageBanner from "~/components/PageBanner.vue";
@@ -11,6 +11,7 @@ import ShareButton from "~/components/ShareButton.vue";
 import SourceSwitch from "~/components/SourceSwitch.vue";
 import {Source} from "~/types/images.js";
 import {useRoute} from "vue-router";
+import VideoItem from "~/components/VideoItem.vue";
 
 
 const panelStore = usePanelStore()
@@ -23,6 +24,7 @@ onMounted(() => {
   if (menuOpen === '1') {
     panelStore.setLeftWidth(panelStore.panelMinWidth)
   }
+  console.log('scrollContainer in Home.vue:', scrollContainer.value);  // 检查 scrollContainer 是否正确挂载
 })
 
 
@@ -33,7 +35,7 @@ const togglePanel = () => {
   localStorage.setItem('menuOpen', panelStore.leftWidth > 0 ? '1' : '0')
 }
 
-
+const scrollYStore = useGalleryScrollYStore()
 const scrollContainer = ref(null)
 const scrollButtonRef = ref(null)
 const {y, directions} = useScroll(scrollContainer, {
@@ -46,8 +48,13 @@ const {y, directions} = useScroll(scrollContainer, {
       scrollButtonRef.value.setShowScrollTopButton(true)
       //
     } else {
-
       scrollButtonRef.value.setShowScrollTopButton(false)
+    }
+    //当滚动条到底部时，触发一个hook
+    if (directions.bottom === true) {
+      scrollYStore.setBottom(true)
+    } else {
+      scrollYStore.setBottom(false)
     }
   }
 })
@@ -126,15 +133,27 @@ const selectSource = ref(
               ref="scrollContainer"
               class="flex justify-center pt-8 overflow-y-auto max-h-full"
           >
-            <div class="w-full max-w-[1600px]">
+            <div class="w-full max-w-[1200px]">
               <div class="mb-8">
-                <SourceSwitch v-model:select-source="selectSource" />
+
+<!--                <SourceSwitch v-model:select-source="selectSource" />-->
               </div>
-              <RecommandView/>
-<!--              <main class="flex-1 p-3">-->
-<!--            -->
-<!--                <div class="h-[64px]"/>-->
-<!--              </main>-->
+<!--              <div flex flex-wrap>-->
+<!--                <VideoItem/>-->
+<!--                <VideoItem/>-->
+<!--                <VideoItem/>-->
+<!--              </div>-->
+
+              <!-- RecommandView now has the correct scroll container -->
+              <RecommandView
+                  v-if="scrollContainer"
+                 />
+
+
+              <main class="flex-1 p-3">
+
+                <div class="h-[64px]"/>
+              </main>
             </div>
           </div>
 

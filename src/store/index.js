@@ -144,6 +144,26 @@ export const useMainStore = defineStore('main', () => {
 
 })
 
+export const useGalleryScrollYStore = defineStore('galleryScrollY', () => {
+  const scrollY = ref(0)
+  const isBottom = ref(false)
+
+  const setScrollY = (y) => {
+    scrollY.value = y
+  }
+
+  const setBottom = (bottom) => {
+    isBottom.value = bottom
+  }
+
+  return {
+    scrollY,
+    setScrollY,
+    isBottom,
+    setBottom
+  }
+})
+
 
 export const usePanelStore = defineStore('pannel', () => {
   const panelMinWidth = ref()
