@@ -104,7 +104,7 @@ onUnmounted(() => {
 
           <LazyImg
               shadow-xl border-4 hover:-translate-y-1 hover:scale-105 hover:transition duration-300 cursor-pointer
-              :url="item.previewUrl"
+              :url="item.linkUrl"
               @click="clickImg(item.id)"
               :alt="item.name"
           />

@@ -22,61 +22,61 @@ const togglePanel = () => {
 
 const routeList = ref([])
 const systemRouterList = ref([
-  {
-    title: '控制台',
-    to: '/admin',
-    icon: 'i-carbon-earth-southeast-asia-filled',
-  },
-  {
-    title: '上传',
-    to: '/admin/upload',
-    icon: 'i-carbon-send-alt',
-  },
-  {
-    title: '维护',
-    to: '/admin/list',
-    icon: 'i-carbon-cics-sit-overrides',
-  },
-  {
-    title: '系统',
-    to: '/admin/system',
-    icon: 'i-carbon-cloud-alerting',
-  },
+  // {
+  //   title: '控制台',
+  //   to: '/admin',
+  //   icon: 'i-carbon-earth-southeast-asia-filled',
+  // },
+  // {
+  //   title: '上传',
+  //   to: '/admin/upload',
+  //   icon: 'i-carbon-send-alt',
+  // },
+  // {
+  //   title: '维护',
+  //   to: '/admin/list',
+  //   icon: 'i-carbon-cics-sit-overrides',
+  // },
+  // {
+  //   title: '系统',
+  //   to: '/admin/system',
+  //   icon: 'i-carbon-cloud-alerting',
+  // },
 ])
 
 watch(() => route.path, () => {
   isOpen.value = false
 })
 
-onBeforeMount(() => {
-  routeList.value.push({
-    title: '首页',
-    to: '/',
-    icon: 'i-carbon-aperture',
-  })
-  if (photosList && photosList?.length > 0) {
-    photosList.forEach((item) => {
-      routeList.value.push({
-        title: item.title,
-        to: item.url,
-        icon: item.icon && item.icon !== '' ? item.icon : 'i-carbon-debug',
-      })
-    })
-  }
+// onBeforeMount(() => {
+//   routeList.value.push({
+//     title: '首页',
+//     to: '/',
+//     icon: 'i-carbon-aperture',
+//   })
+//   if (photosList && photosList?.length > 0) {
+//     photosList.forEach((item) => {
+//       routeList.value.push({
+//         title: item.title,
+//         to: item.url,
+//         icon: item.icon && item.icon !== '' ? item.icon : 'i-carbon-debug',
+//       })
+//     })
+//   }
   routeList.value.push({
     title: '关于',
     to: '/about',
     icon: 'i-carbon-warning',
   })
-})
-
-const logout = () => {
-  router.push('/')
-}
-
-onBeforeUnmount(() => {
-  routeList.value = []
-})
+// })
+//
+// const logout = () => {
+//   router.push('/')
+// }
+//
+// onBeforeUnmount(() => {
+//   routeList.value = []
+// })
 </script>
 
 <template>
@@ -116,20 +116,20 @@ onBeforeUnmount(() => {
                 >
                   <span :class="item.icon" text-xl me-4/>{{ item.title }}
                 </RouterLink>
-                <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2/>
-                <RouterLink
-                    v-for="item in systemRouterList"
-                    :key="item.to"
-                    :to="item.to"
-                    flex flex-row items-center rounded-md
-                    block px-5 py-2 focus-blue w-full
-                    transition-colors duration-200 transform
-                    hover="bg-gray-100 dark:(bg-gray-700 text-white)"
-                    :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-black-200'"
-                    :aria-label="item.title"
-                >
-                  <span :class="item.icon" text-xl me-4/>{{ item.title }}
-                </RouterLink>
+<!--                <div border="neutral-300 dark:neutral-700 t-1" mx-3 my-2/>-->
+<!--                <RouterLink-->
+<!--                    v-for="item in systemRouterList"-->
+<!--                    :key="item.to"-->
+<!--                    :to="item.to"-->
+<!--                    flex flex-row items-center rounded-md-->
+<!--                    block px-5 py-2 focus-blue w-full-->
+<!--                    transition-colors duration-200 transform-->
+<!--                    hover="bg-gray-100 dark:(bg-gray-700 text-white)"-->
+<!--                    :class="route.path === item.to ? 'text-green' : 'text-gray-700 dark:text-black-200'"-->
+<!--                    :aria-label="item.title"-->
+<!--                >-->
+<!--                  <span :class="item.icon" text-xl me-4/>{{ item.title }}-->
+<!--                </RouterLink>-->
               </div>
             </template>
           </el-popover>

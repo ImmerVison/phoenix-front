@@ -194,9 +194,12 @@ onUnmounted(() => {
           <template #default>
             <el-card class="box-card" mx-auto rounded-lg shadow-md w-full>
               <h3 flex justify-center items-center space-x-1 text-base text-center font-medium>
-                <div i-carbon-image-search />
-                <p>EXIF</p>
+                <div i-carbon:database-messaging />
+                <p>评论</p>
               </h3>
+              <div>
+                ...Work In Progress
+              </div>
             </el-card>
           </template>
         </el-tab-pane>
