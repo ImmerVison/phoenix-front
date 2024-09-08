@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/phoenix/:path*",
+      "destination": "http://47.84.77.144:35722/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://ciallo.link/:path*"
+    },
+    {
+      "source": "/lolicon/:path*",
+      "destination": "https://api.lolicon.app/:path*"
+    },
+    {
+      "source": "/waifu/:path*",
+      "destination": "https://api.waifu.im/:path*"
+    }
+  ]
+}

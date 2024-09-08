@@ -7,7 +7,6 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Button: typeof import('./components/Button.vue')['default']
     Canvas: typeof import('./components/Canvas.vue')['default']
     Categories: typeof import('./components/Categories.vue')['default']
     DarkToggle: typeof import('./components/DarkToggle.vue')['default']
@@ -21,10 +20,12 @@ declare module 'vue' {
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElImage: typeof import('element-plus/es')['ElImage']
     ElInput: typeof import('element-plus/es')['ElInput']
+    ElOption: typeof import('element-plus/es')['ElOption']
     ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
     ElRate: typeof import('element-plus/es')['ElRate']
+    ElSelect: typeof import('element-plus/es')['ElSelect']
     ElSkeleton: typeof import('element-plus/es')['ElSkeleton']
     ElSkeletonItem: typeof import('element-plus/es')['ElSkeletonItem']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
@@ -50,7 +51,6 @@ declare module 'vue' {
     ScrollTopButton: typeof import('./components/ScrollTopButton.vue')['default']
     Search: typeof import('./components/Search.vue')['default']
     ShareButton: typeof import('./components/ShareButton.vue')['default']
-    ShowMore: typeof import('./components/ShowMore.vue')['default']
     SourceSwitch: typeof import('./components/SourceSwitch.vue')['default']
     Title: typeof import('./components/Title.vue')['default']
     TogglePannel: typeof import('./components/TogglePannel.vue')['default']
@@ -58,7 +58,6 @@ declare module 'vue' {
     Uploader: typeof import('./components/Uploader.vue')['default']
     VideoItem: typeof import('./components/VideoItem.vue')['default']
     Warn: typeof import('./components/icons/Warn.vue')['default']
-    Waterfall: typeof import('./components/Waterfall.vue')['default']
     YkIcon: typeof import('./components/icons/YkIcon.vue')['default']
   }
 }
