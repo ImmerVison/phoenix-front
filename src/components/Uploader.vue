@@ -211,7 +211,7 @@ const beforeUpload = (uploadFile) => {
 const handleSuccess = (response, uid) => {
   try {
     // const rootUrl = `${window.location.protocol}//${window.location.host}`;
-    const rootUrl = 'https://ciallo.link';
+    const rootUrl = 'https://pic.ciallo.link';
     const target = imgPreviewList.value.find(item => item.uid === uid);
     target.url = rootUrl + response.data[0].src;
     target.percentage = 100;

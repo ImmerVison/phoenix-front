@@ -2,7 +2,7 @@ import request from "~/api/requests.js";
 
 export function uploader(formData, uploadFile, cookies, onProgress) {
   return request({
-    url: `/api/upload`,
+    url: `/api/upload?authCode=unset`,
     method: 'post',
     data: formData,
     headers: {

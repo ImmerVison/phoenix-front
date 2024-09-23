@@ -36,12 +36,13 @@ export default defineConfig(({ mode }) => {
             open: true,
             proxy: {
                 "/phoenix": {
-                    target: "http://47.84.77.144:35722",
+                    //target: "http://47.84.77.144:35722",
+                    target: "http://localhost:35722",
                     changeOrigin: true,
                     rewrite: (path) => path.replace(/^\/phoenix/, "")
                 },
                 "/api": {
-                    target: "https://ciallo.link",
+                    target: "https://pic.ciallo.link",
                     changeOrigin: true,
                     rewrite: (path) => path.replace(/^\/api/, ""),
                 },

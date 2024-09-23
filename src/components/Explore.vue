@@ -258,7 +258,7 @@ function closeAnnouncement() {
           <RouterLink v-if="settings.friends.length > 0" to="/friends">{{ $t('nav.friends') }}</RouterLink>
         </span>
         <div class="copyright">
-          © {{ new Date().getFullYear() }} <a href="https://github.com/rkonfj/weblln">WebLLN</a>
+          © {{ new Date().getFullYear() }} <a href="">Web</a>
         </div>
       </div>
     </footer>
