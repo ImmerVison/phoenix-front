@@ -4,6 +4,7 @@ import {useUserStore, usePanelStore} from '~/store/index.js'
 import {useRouter, useRoute} from 'vue-router'
 import photosList from '~/constants/photos.json'
 import DarkToggle from "~/components/DarkToggle.vue";
+import UserOperation from "~/components/UserOperation.vue";
 
 
 const breakpoints = useBreakpoints(breakpointsTailwind)
@@ -135,8 +136,10 @@ watch(() => route.path, () => {
           </el-popover>
 
 
-          <el-button v-if="!user.token" color="white" @click="router.push('/login')">登录</el-button>
-          <el-button v-if="user.token && route.path.startsWith('/admin')" color="white" @click="logout">注销</el-button>
+          <UserOperation/>
+
+
+
         </div>
       </div>
     </nav>

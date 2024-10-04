@@ -228,5 +228,23 @@ export const useUserStore = defineStore('user', {
   persist: true,
 })
 
+export const useLoginFormOpen =
+    defineStore('LoginFormOpen', () =>{
+  const dialogFormVisible = ref(false)
+  const asideFormVisible = ref(true)
+      const openDialogForm = () => {
+          dialogFormVisible.value = true
+      }
+      const closeDialogForm = () => {
+          dialogFormVisible.value = false
+      }
+  return {
+    dialogFormVisible,
+    asideFormVisible,
+    openDialogForm,
+    closeDialogForm
+  }
+})
+
 if (import.meta.hot)
   import.meta.hot.accept(acceptHMRUpdate(useUserStore, import.meta.hot))

@@ -27,7 +27,13 @@ export function getTop10View() {
   })
 }
 
-const artistList = ['宮瀬まひろ', '夕冰', '碳酸', '失楽园', '轻舞wu', '加瀬大輝', '荻pote', '残夜ZANYA', '半尺月白', '星', 'proverbs', 'MeioN', 'MAZE', 'ATDAN', 'age fx']
+//const artistList = ['宮瀬まひろ', '夕冰', '碳酸', '失楽园', '轻舞wu', '加瀬大輝', '荻pote', '残夜ZANYA', '半尺月白', '星', 'proverbs', 'MeioN', 'MAZE', 'ATDAN', 'age fx']
+const artistList = ['佐々', 'くやしこ', 'こはく', '失楽园@日曜日 東1H32a',
+  'AkiZero1510', 'karory', 'SOHAN', '碳酸', '水無月みず@1日目西ほ05b', '失楽园@日曜日 東1H32a',
+  'まきひげ', '天原スバル的插画', '半尺月白', 'やばちゃ', 'yakool', 'rosumerii的',
+  '和音ハカ', '咖啡shiuki', 'Flippy', 'No.774', 'age fx',
+  'HMaX@2日目 東ク22a', 'らむち', '萌夜茶会', 'Machi', 'ねずも',
+  '轻舞wu', 'みさんが', '宮瀬まひろ', '蒼井うる']
 
 //从中随机任选一位
 const randomArtist = () => {
@@ -42,7 +48,7 @@ export function getByArtist() {
     params: {
       artist: randomArtist(),
       page: 1,
-      size: 1000
+      size: 20
     }
   })
 }

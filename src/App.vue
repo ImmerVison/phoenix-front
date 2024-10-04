@@ -8,7 +8,7 @@ const showLoading = ref(true);
 
 // onMounted(() => {
 //   const waitLoading = () => {
-//     useEventListener(window, 'load', () => {
+//     useEventListener(window, 'homePage', () => {
 //       onLoading.value = false;
 //       useTimeoutFn(() => {
 //         showLoading.value = false;

@@ -12,6 +12,9 @@ import SourceSwitch from "~/components/SourceSwitch.vue";
 import {Source} from "~/types/images.js";
 import {useRoute} from "vue-router";
 import VideoItem from "~/components/VideoItem.vue";
+import NavBar from "~/components/NavBar.vue";
+import Countdown from "~/components/Countdown.vue";
+import LoadingView from "~/pages/LoadingView.vue";
 
 
 const panelStore = usePanelStore()
@@ -116,6 +119,7 @@ const selectSource = ref(
 
 <template>
 
+  <LoadPage/>
   <div class="min-h-screen flex flex-col bg-white dark:bg-#09090B">
     <div class="h-100vh w-100vw relative flex">
       <div class="flex w-full min-h-full">
@@ -144,6 +148,10 @@ const selectSource = ref(
 <!--                <VideoItem/>-->
 <!--              </div>-->
 
+              <div flex justify-center>
+                <NavBar/>
+              </div>
+              <Countdown/>
               <!-- RecommandView now has the correct scroll container -->
               <RecommandView
                   v-if="scrollContainer"

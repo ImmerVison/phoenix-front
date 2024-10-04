@@ -1,0 +1,92 @@
+{
+  "title": "Revincx | 向更远的方向进发",
+  "favico": "/assets/favico.png",
+  "pageBackground": "https://i0.wp.com/cdn.someacg.top/graph/origin/109645355_p0.jpg",
+  "avatarImage": "https://pic.ciallo.link/file/b801bb01e2aa40dbdd308.jpg",
+  "avatarText": "いくよ !",
+  "name": "Revincx",
+  "theme": {
+    "backgroundBlur": false
+  },
+  "oneWord": {
+    "type": "array",
+    "array": [
+      "不就是个破写代码的！",
+      "犹豫就会败北，果断就会白给。",
+      "又摸了一天鱼，好累啊~",
+      "唯有爱能够在宇宙中永恒存在。",
+      "但时间会见证我们所做的一切。",
+      "曾妄想凭一己之力，撬动整个地球。",
+      "睡眠才是第一生产力~",
+      "你知道吗，这里的句子都是我自己整理的哦~",
+      "在没有努力之前就放弃，那就是懒惰。",
+      "人是系统安全的短板。",
+      "我已是离家出走的孩子，离家越远越不想家。",
+      "不停预言他人不幸的预言家才是最不幸的人。",
+      "小知识：字母表的字母是按字母表顺序排列的",
+      "当你无法回头时，才是真正的旅途。",
+      "意志坚定与任性，只有一纸之隔。",
+      "今年也没什么干劲，明天再开始努力吧。",
+      "自强不强，不强自息。",
+      "当你看见了这句话时，你就看见了这句话。",
+      "有笨蛋，我不说是谁～",
+      "Just be yourself."
+    ]
+  },
+  "columns": [
+    {
+      "name": "主页",
+      "link": "https://revincx.icu"
+    },
+    {
+      "name": "博客",
+      "link": "https://blog.revincx.icu/"
+    },
+    {
+      "name": "网盘",
+      "link": "https://cloud.revincx.icu"
+    },
+    {
+      "name": "友链",
+      "link": "https://blog.revincx.icu/link/"
+    },
+    {
+      "name": "关于",
+      "link": "https://blog.revincx.icu/about"
+    }
+  ],
+  "contacts": [
+    {
+      "icon": [
+        "fab",
+        "github"
+      ],
+      "link": "https://github.com/Revincx"
+    },
+    {
+      "icon": [
+        "fab",
+        "telegram"
+      ],
+      "link": "https://t.me/Revincx_Rua"
+    },
+    {
+      "icon": [
+        "fab",
+        "twitter"
+      ],
+      "link": "https://twitter.com/revincx"
+    },
+    {
+      "icon": [
+        "fas",
+        "envelope"
+      ],
+      "link": "mailto:i@revincx.icu"
+    }
+  ],
+  "moeICP": {
+    "enabled": true,
+    "ICPNum": "20211666"
+  }
+}

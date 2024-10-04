@@ -10,7 +10,7 @@ const routes = [
     component: () => import('~/pages/Home.vue'),
   },
 
-  {path: '/home', name: 'home', component: () => import('~/pages/Home.vue'),meta: {keepAlive: true,noCache: true}},
+  {path: '/home', name: 'home', component: () => import('~/components/homePage/HomePage.vue'),meta: {keepAlive: true,noCache: true}},
   {path: '/', name: 'index', component: () => import('~/pages/Home.vue'),meta: {keepAlive: true,noCache: true}},
   {path: '/about', name: 'about', component: () => import('~/pages/About.vue'),meta: {keepAlive: true,noCache: true}},
   {path: '/upload',name: 'upload',component: () => import('~/pages/UploadView.vue'),meta: {keepAlive: true,noCache: true}},

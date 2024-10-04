@@ -14,7 +14,7 @@ const { tolerance } = defineProps({
   // },
 });
 
-const emit = defineEmits(["load"]);
+const emit = defineEmits(["homePage"]);
 
 // region 这个方法不起作用
 // const onScroll = () => {
@@ -25,7 +25,7 @@ const emit = defineEmits(["load"]);
 //
 //   const { scrollHeight, scrollTop, clientHeight } = scrollContainer.value;
 //   if (scrollTop + clientHeight >= scrollHeight - tolerance) {
-//     emit("load");
+//     emit("homePage");
 //   }
 // };
 //

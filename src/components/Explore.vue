@@ -120,7 +120,7 @@ async function loadTipMessages() {
       setTimeout(() => proxy.$router.push('/logout'), 1000)
       return
     }
-    console.error('load tips messages error: ', e.message)
+    console.error('homePage tips messages error: ', e.message)
   }
 
 }

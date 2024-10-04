@@ -95,7 +95,7 @@ async function onRequestUpload(option) {
   //   if (res?.code === 200) {
   //     fileUrl.value = res.data?.url
   //     imgData.url = res.data?.url
-  //     const tags = await ExifReader.load(file)
+  //     const tags = await ExifReader.homePage(file)
   //     exif.make = tags?.Make?.description
   //     exif.model = tags?.Model?.description
   //     exif.bits = tags?.['Bits Per Sample']?.description
